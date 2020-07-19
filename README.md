@@ -1,4 +1,4 @@
-# naughty
+# naughty [![](https://jitpack.io/v/dzenm/naughty.svg)](https://jitpack.io/#dzenm/naughty)
 
 这是一个查看网络请求的工具
 
