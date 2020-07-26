@@ -7,7 +7,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.dzenm.lib.Naughty;
+import com.dzenm.naughty.Naughty;
 
 import java.io.IOException;
 
@@ -41,9 +41,11 @@ public class MainActivity extends AppCompatActivity {
      * 创建自定义Ok http Client[createRetrofit]
      */
     private void provideOkHttpClient() {
-        OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(Naughty.get(this))
-                .build();
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        if (BuildConfig.DEBUG) {
+            builder.addInterceptor(Naughty.getInstance().setDebug(true).get(this));
+        }
+        OkHttpClient client = builder.build();
 
         String url = "https://wwww.baidu.com";
         final Request request = new Request.Builder()

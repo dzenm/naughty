@@ -11,7 +11,8 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
-            <option value="$PROJECT_DIR$/lib" />
+            <option value="$PROJECT_DIR$/naughty" />
+            <option value="$PROJECT_DIR$/naughty-debug" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

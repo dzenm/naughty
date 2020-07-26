@@ -1,3 +1,4 @@
-include ':lib'
 rootProject.name='naughty'
 include ':app'
+include ':naughty'
+include ':naughty-debug'
