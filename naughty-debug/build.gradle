@@ -23,5 +23,5 @@ android {
 }
 
 dependencies {
-    api project(":naughty")
+    api project(":naughty-release")
 }
