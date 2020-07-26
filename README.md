@@ -6,8 +6,13 @@
 
 ## 下载 （[查看最新版本](https://github.com/dzenm/naughty/releases/latest)）
 
+release版本使用
 ```groovy
-implementation 'com.github.dzenm:naughty:1.0.0'
+releaseImplementation 'com.github.dzenm.naughty:naughty-release:1.2.0'
+```
+debug版本使用
+```
+debugImplementation 'com.github.dzenm.naughty:naughty-debug:1.2.0'
 ```
 
 ## 使用
