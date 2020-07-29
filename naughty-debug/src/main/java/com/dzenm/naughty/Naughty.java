@@ -3,6 +3,8 @@ package com.dzenm.naughty;
 import android.annotation.SuppressLint;
 import android.content.Context;
 
+import com.dzenm.naughty.http.HttpInterceptor;
+
 import okhttp3.Interceptor;
 
 /**
@@ -45,7 +47,8 @@ public class Naughty {
         return isDebug;
     }
 
-    public Interceptor get(Context context) {
-        return null;
+    public HttpInterceptor get(Context context) {
+        return new HttpInterceptor(context);
     }
+
 }

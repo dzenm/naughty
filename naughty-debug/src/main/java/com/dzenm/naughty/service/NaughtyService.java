@@ -7,7 +7,7 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import com.dzenm.naughty.Naughty;
+import com.dzenm.naughty.NaughtyDelegate;
 
 /**
  * 记得在AndroidManifest添加服务
@@ -22,9 +22,9 @@ public class NaughtyService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate");
 
-        Naughty.isCreated = true;
+        NaughtyDelegate.isCreated = true;
 
-        Naughty.getInstance().onCreate(this);
+        NaughtyDelegate.getInstance().onCreate(this);
     }
 
     @Nullable
@@ -41,7 +41,7 @@ public class NaughtyService extends Service {
 
     @Override
     public boolean stopService(Intent name) {
-        Naughty.getInstance().dismiss();
+        NaughtyDelegate.getInstance().dismiss();
         Log.d(TAG, "stopService");
         return super.stopService(name);
     }
@@ -51,8 +51,8 @@ public class NaughtyService extends Service {
         // 自杀服务
         stopSelf();
         super.onDestroy();
-        Naughty.isCreated = false;
+        NaughtyDelegate.isCreated = false;
         Log.d(TAG, "onDestroy");
-        Naughty.getInstance().onDestroy();
+        NaughtyDelegate.getInstance().onDestroy();
     }
 }

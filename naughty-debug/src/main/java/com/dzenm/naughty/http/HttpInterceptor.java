@@ -17,6 +17,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.dzenm.naughty.Naughty;
+import com.dzenm.naughty.NaughtyDelegate;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.service.NaughtyBroadcast;
 import com.dzenm.naughty.ui.HttpBean;
@@ -49,7 +50,7 @@ public class HttpInterceptor implements Interceptor {
     private static final String TAG = HttpInterceptor.class.getSimpleName();
     private static final Charset UTF8 = StandardCharsets.UTF_8;
 
-    private Naughty mNaughty;
+    private NaughtyDelegate mNaughty;
     private Context mContext;
 
     private final AtomicInteger mNextRequestId = new AtomicInteger(0);
@@ -63,10 +64,10 @@ public class HttpInterceptor implements Interceptor {
     @Override
     public Response intercept(Chain chain) throws IOException {
         if (mNaughty == null) {
-            mNaughty = Naughty.getInstance();
+            mNaughty = NaughtyDelegate.getInstance();
         }
         Request request = chain.request();
-        if (mNaughty.isDebug()) {
+        if (Naughty.getInstance().isDebug()) {
             Log.d(TAG, "request hashCode: " + request.hashCode());
 
             // 保存请求及返回的数据
@@ -75,7 +76,7 @@ public class HttpInterceptor implements Interceptor {
             bean.setId(mNextRequestId.getAndIncrement());
 
             bean.setCurrentTime(getCurrentTime());
-            bean.setLoadingState(Naughty.START);
+            bean.setLoadingState(NaughtyDelegate.START);
             setRequestState(bean);
 
             // 请求内容
@@ -118,7 +119,7 @@ public class HttpInterceptor implements Interceptor {
             }
 
             // 等待响应
-            bean.setLoadingState(Naughty.RUNNING);
+            bean.setLoadingState(NaughtyDelegate.RUNNING);
             setRequestState(bean);
 
             Response response;
@@ -167,7 +168,7 @@ public class HttpInterceptor implements Interceptor {
                     bean.setResponseBody("");
                 }
 
-                bean.setLoadingState(Naughty.STOP);
+                bean.setLoadingState(NaughtyDelegate.STOP);
                 setRequestState(bean);
                 return response;
             } catch (Exception e) {
@@ -181,7 +182,7 @@ public class HttpInterceptor implements Interceptor {
                 bean.setResponseSize("");
                 bean.setResponseBody(e.getMessage());
 
-                bean.setLoadingState(Naughty.STOP);
+                bean.setLoadingState(NaughtyDelegate.STOP);
                 setRequestState(bean);
                 throw e;
             }
@@ -195,7 +196,7 @@ public class HttpInterceptor implements Interceptor {
     }
 
     private void setRequestState(HttpBean bean) {
-        Naughty.OnRequestListener listener = mNaughty.getOnRequestListener();
+        NaughtyDelegate.OnRequestListener listener = mNaughty.getOnRequestListener();
         if (listener != null) {
             listener.onInterceptor(bean, mNaughty.indexOf(bean));
         }

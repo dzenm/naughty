@@ -19,7 +19,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.dzenm.naughty.Naughty;
+import com.dzenm.naughty.NaughtyDelegate;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.util.Utils;
 
@@ -93,7 +93,7 @@ class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
         holder.tvTime.setText(bean.getCurrentTime());
         holder.tvSize.setText(bean.getResponseSize());
 
-        boolean isFinished = Naughty.getInstance().isHttpFinished(bean.getLoadingState());
+        boolean isFinished = NaughtyDelegate.getInstance().isHttpFinished(bean.getLoadingState());
         holder.tvResult.setVisibility(isFinished ? View.VISIBLE : View.GONE);
         holder.tvResult.setText(result ? "Success" : "Failed");
 

@@ -40,4 +40,7 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:3.14.0'
     releaseImplementation project(":naughty-release")
     debugImplementation project(":naughty-debug")
+//    releaseImplementation 'com.github.dzenm.naughty:naughty-release:1.2.0'
+//    debugImplementation 'com.github.dzenm.naughty:naughty-debug:1.2.0'
+
 }
