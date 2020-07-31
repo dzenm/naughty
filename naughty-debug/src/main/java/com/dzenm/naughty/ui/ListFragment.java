@@ -20,13 +20,13 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.dzenm.naughty.NaughtyDelegate;
+import com.dzenm.naughty.Naughty;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.service.NaughtyService;
 import com.dzenm.naughty.util.Utils;
 
 public class ListFragment extends Fragment implements
-        NaughtyDelegate.OnRequestListener, ListAdapter.OnItemClickListener {
+        Naughty.OnRequestListener, ListAdapter.OnItemClickListener {
 
     private HttpActivity mActivity;
     private ListAdapter mAdapter;
@@ -88,10 +88,10 @@ public class ListFragment extends Fragment implements
         recyclerView.setLayoutManager(new LinearLayoutManager(
                 mActivity, LinearLayoutManager.VERTICAL, false
         ));
-        NaughtyDelegate.getInstance().setOnRequestListener(this);
+        Naughty.getInstance().setOnRequestListener(this);
         mAdapter = new ListAdapter();
         mAdapter.setOnItemClickListener(this);
-        mAdapter.setData(NaughtyDelegate.getInstance().get());
+        mAdapter.setData(Naughty.getInstance().get());
         recyclerView.setAdapter(mAdapter);
 
         parent.addView(toolbar);
@@ -107,11 +107,11 @@ public class ListFragment extends Fragment implements
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.close) {
-            NaughtyDelegate.getInstance().setShowNotification(false);
+            Naughty.getInstance().setShowNotification(false);
             mActivity.stopService(new Intent(mActivity, NaughtyService.class));
             mActivity.back(true);
         } else if (item.getItemId() == R.id.clear) {
-            NaughtyDelegate.getInstance().clear();
+            Naughty.getInstance().clear();
             mAdapter.notifyDataSetChanged();
         } else if (item.getItemId() == R.id.setting) {
             // TODO Somethings
@@ -121,7 +121,7 @@ public class ListFragment extends Fragment implements
 
     @Override
     public void onItemClick(HttpBean bean, int position) {
-        if (NaughtyDelegate.getInstance().isHttpFinished(bean.getLoadingState())) {
+        if (Naughty.getInstance().isHttpFinished(bean.getLoadingState())) {
             ItemFragment fragment = ItemFragment.newInstance(bean);
             Utils.switchFragment(
                     mActivity.mFrameLayoutId,

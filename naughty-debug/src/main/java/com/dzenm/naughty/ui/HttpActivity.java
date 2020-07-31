@@ -17,7 +17,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 
-import com.dzenm.naughty.NaughtyDelegate;
+import com.dzenm.naughty.Naughty;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.service.NaughtyService;
 import com.dzenm.naughty.util.Utils;
@@ -53,13 +53,13 @@ public class HttpActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        NaughtyDelegate.getInstance().onChanged(false);
+        Naughty.getInstance().onChanged(false);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        NaughtyDelegate.getInstance().onChanged(true);
+        Naughty.getInstance().onChanged(true);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class HttpActivity extends AppCompatActivity {
 
     void back(boolean isFinished) {
         if (isFinished) {
-            NaughtyDelegate.getInstance().clear();
+            Naughty.getInstance().clear();
             super.finish();
         } else {
             final FragmentManager manager = getSupportFragmentManager();
@@ -128,7 +128,7 @@ public class HttpActivity extends AppCompatActivity {
      * @param activity 上下文
      */
     void checkServiceWithEnabled(final AppCompatActivity activity) {
-        if (NaughtyDelegate.isCreated || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
+        if (Naughty.isCreated || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
 
         if (Utils.checkOverlaysPermission(activity)) {
             startService(new Intent(activity, NaughtyService.class));

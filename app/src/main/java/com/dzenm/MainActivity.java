@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private void provideOkHttpClient() {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         if (BuildConfig.DEBUG) {
-            builder.addInterceptor(Naughty.getInstance().setDebug(true).get(this));
+            builder.addInterceptor(Naughty.getInstance().get(this));
         }
         OkHttpClient client = builder.build();
 

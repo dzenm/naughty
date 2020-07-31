@@ -1,9 +1,8 @@
 package com.dzenm.naughty;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 
-import okhttp3.Interceptor;
+import com.dzenm.core.BaseNaughty;
 
 /**
  * @author dzenm
@@ -13,17 +12,12 @@ import okhttp3.Interceptor;
  * implementation 'com.squareup.okhttp3:okhttp:3.14.0'
  * <p>
  * 第二, 在Okhttp中添加Interceptor
- * Naughty.get(this)
+ * builder.addInterceptor(Naughty.newInstance().setDebug(true).get(this));
  */
-public class Naughty {
+public class Naughty extends BaseNaughty {
 
     @SuppressLint("StaticFieldLeak")
     private static volatile Naughty sInstance;
-
-    /**
-     * 是否是debug模式
-     */
-    private boolean isDebug = false;
 
     public static Naughty getInstance() {
         if (sInstance == null) {
@@ -34,18 +28,5 @@ public class Naughty {
             }
         }
         return sInstance;
-    }
-
-    public Naughty setDebug(boolean debug) {
-        isDebug = debug;
-        return this;
-    }
-
-    public boolean isDebug() {
-        return isDebug;
-    }
-
-    public Interceptor get(Context context) {
-        return null;
     }
 }

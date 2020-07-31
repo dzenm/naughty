@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.dzenm.naughty.NaughtyDelegate;
+import com.dzenm.naughty.Naughty;
 
 /**
  * 记得在AndroidManifest添加广播
@@ -22,7 +22,7 @@ public class NaughtyBroadcast extends BroadcastReceiver {
         String action = intent.getAction();
         if (action != null) {
             if (action.equals(ACTION_NOTIFICATION)) {
-                NaughtyDelegate.getInstance().startActivity(context);
+                Naughty.getInstance().startActivity(context);
             }
         }
     }
