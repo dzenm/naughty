@@ -17,8 +17,8 @@ import android.widget.TextView;
 import com.dzenm.core.BaseNaughty;
 import com.dzenm.naughty.http.HttpInterceptor;
 import com.dzenm.naughty.service.NaughtyService;
-import com.dzenm.naughty.ui.HttpActivity;
-import com.dzenm.naughty.ui.HttpBean;
+import com.dzenm.naughty.ui.MainModelActivity;
+import com.dzenm.naughty.ui.http.HttpBean;
 import com.dzenm.naughty.util.Utils;
 
 import java.util.ArrayList;
@@ -177,7 +177,7 @@ public class Naughty extends BaseNaughty {
      * @param context 上下文
      */
     public void startActivity(Context context) {
-        Intent intent = new Intent(context, HttpActivity.class);
+        Intent intent = new Intent(context, MainModelActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }

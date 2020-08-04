@@ -1,11 +1,6 @@
-package com.dzenm.naughty.ui;
+package com.dzenm.naughty.ui.http;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -21,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.dzenm.naughty.Naughty;
 import com.dzenm.naughty.R;
-import com.dzenm.naughty.util.Utils;
+import com.dzenm.naughty.util.ViewUtils;
 
 import java.util.List;
 
@@ -73,7 +68,7 @@ class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
             color = R.attr.colorError;
         }
         holder.tvStatus.setText(statusString);
-        holder.tvStatus.setTextColor(Utils.resolveColor(context, color));
+        holder.tvStatus.setTextColor(ViewUtils.resolveColor(context, color));
 
         String url = bean.getUrl();
 
@@ -83,7 +78,7 @@ class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
             SpannableString string = new SpannableString(urlString);
             RelativeSizeSpan sizeSpan = new RelativeSizeSpan(1.1f);
             string.setSpan(sizeSpan, 0, index, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            holder.tvUrl.setTextColor(Utils.primaryTextColor());
+            holder.tvUrl.setTextColor(ViewUtils.primaryTextColor());
             holder.tvUrl.setText(string);
         }
 
@@ -98,11 +93,11 @@ class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
         holder.tvResult.setText(result ? "Success" : "Failed");
 
         float radius = 4f;
-        holder.tvResult.setBackground(getStatusDrawable(Utils.resolveColor(context, color), radius));
+        holder.tvResult.setBackground(ViewUtils.getStatusDrawable(ViewUtils.resolveColor(context, color), radius));
 
         holder.progressBar.setVisibility(isFinished ? View.INVISIBLE : View.VISIBLE);
 
-        holder.itemView.setBackground(getRippleDrawable(radius));
+        holder.itemView.setBackground(ViewUtils.getRippleDrawable(context, radius));
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -111,39 +106,6 @@ class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
                 }
             }
         });
-    }
-
-    private Drawable getStatusDrawable(int color, float radius) {
-        GradientDrawable gradientDrawable = new GradientDrawable();
-        gradientDrawable.setColor(color);
-        float[] radiusII = new float[]{
-                0, 0, Utils.dp2px(radius), Utils.dp2px(radius),
-                0, 0, Utils.dp2px(radius), Utils.dp2px(radius)};
-        gradientDrawable.setCornerRadii(radiusII);
-        return gradientDrawable;
-    }
-
-    /**
-     * 获取水波纹按压背景
-     *
-     * @param radius 圆角
-     * @return 水波纹背景
-     */
-    private Drawable getRippleDrawable(float radius) {
-        GradientDrawable normalDrawable = new GradientDrawable();
-        normalDrawable.setColor(Color.WHITE);
-        float[] radiusIIII = new float[]{
-                Utils.dp2px(radius), Utils.dp2px(radius),
-                Utils.dp2px(radius), Utils.dp2px(radius),
-                Utils.dp2px(radius), Utils.dp2px(radius),
-                Utils.dp2px(radius), Utils.dp2px(radius)};
-        normalDrawable.setCornerRadii(radiusIIII);
-
-        normalDrawable.setStroke(Utils.dp2px(1), Utils.resolveColor(context, R.attr.colorAccent));
-
-        return new RippleDrawable(
-                ColorStateList.valueOf(Utils.resolveColor(context, R.attr.colorButtonNormal)),
-                normalDrawable, null);
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

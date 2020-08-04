@@ -20,15 +20,14 @@ import androidx.fragment.app.FragmentManager;
 import com.dzenm.naughty.Naughty;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.service.NaughtyService;
+import com.dzenm.naughty.ui.http.ListFragment;
 import com.dzenm.naughty.util.Utils;
+import com.dzenm.naughty.util.ViewUtils;
 
-public class HttpActivity extends AppCompatActivity {
+public class MainModelActivity extends AppCompatActivity {
 
-    private static final String TAG = HttpActivity.class.getSimpleName();
+    private static final String TAG = MainModelActivity.class.getSimpleName();
     private static final int REQUEST_FLOATING = 0xF1;
-    static final String FLOATING_BEAN = "floating_bean";
-    ListFragment mFragment;
-    int mFrameLayoutId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -41,13 +40,13 @@ public class HttpActivity extends AppCompatActivity {
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         // 清除原有的状态栏半透明状态
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        window.setStatusBarColor(Utils.resolveColor(this, R.attr.colorPrimary));
+        window.setStatusBarColor(ViewUtils.resolveColor(this, R.attr.colorPrimary));
 
         checkServiceWithEnabled(this);
 
         Utils.clearStack(getSupportFragmentManager());
-        mFragment = ListFragment.newInstance();
-        Utils.switchFragment(mFrameLayoutId, getSupportFragmentManager(), null, mFragment);
+        ListFragment fragment = ListFragment.newInstance();
+        Utils.switchFragment(getSupportFragmentManager(), null, fragment);
     }
 
     @Override
@@ -98,16 +97,15 @@ public class HttpActivity extends AppCompatActivity {
     }
 
     private View createView() {
-        mFrameLayoutId = View.generateViewId();
         FrameLayout frameLayout = new FrameLayout(this);
         frameLayout.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
         ));
-        frameLayout.setId(mFrameLayoutId);
+        frameLayout.setId(R.id.frame_layout_id);
         return frameLayout;
     }
 
-    void back(boolean isFinished) {
+    public void back(boolean isFinished) {
         if (isFinished) {
             Naughty.getInstance().clear();
             super.finish();
@@ -127,7 +125,7 @@ public class HttpActivity extends AppCompatActivity {
      *
      * @param activity 上下文
      */
-    void checkServiceWithEnabled(final AppCompatActivity activity) {
+    private void checkServiceWithEnabled(final AppCompatActivity activity) {
         if (Naughty.isCreated || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
 
         if (Utils.checkOverlaysPermission(activity)) {

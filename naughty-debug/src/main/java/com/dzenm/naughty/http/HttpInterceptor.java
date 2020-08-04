@@ -20,7 +20,7 @@ import com.dzenm.core.BaseInterceptor;
 import com.dzenm.naughty.Naughty;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.service.NaughtyBroadcast;
-import com.dzenm.naughty.ui.HttpBean;
+import com.dzenm.naughty.ui.http.HttpBean;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -44,6 +44,10 @@ import okhttp3.ResponseBody;
 import okio.Buffer;
 import okio.BufferedSource;
 
+/**
+ * @author dzenm
+ * 2020/8/4
+ */
 public class HttpInterceptor extends BaseInterceptor {
 
     private static final String TAG = HttpInterceptor.class.getSimpleName();
