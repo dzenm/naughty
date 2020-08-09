@@ -263,7 +263,7 @@ public class HttpInterceptor extends BaseInterceptor {
                 // 设置优先级
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setAutoCancel(true)                        // 设置自动取消
-                .setSmallIcon(R.drawable.ic_home_circle)    // 设置小图标
+                .setSmallIcon(R.drawable.ic_network)        // 设置小图标
                 .setContentTitle("HTTP Request For Debug")  // 设置标题
                 .setContentText(text)                       // 设置内容
                 .setSound(sound)                            // 设置通知提示音, 8.0以上使用NotificationChannel设置

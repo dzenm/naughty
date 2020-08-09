@@ -3,23 +3,27 @@ package com.dzenm.naughty;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.PixelFormat;
-import android.os.Build;
-import android.view.Gravity;
+import android.os.Process;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.dzenm.core.BaseNaughty;
+import com.dzenm.log.LogHelper;
 import com.dzenm.naughty.http.HttpInterceptor;
 import com.dzenm.naughty.service.NaughtyService;
 import com.dzenm.naughty.ui.MainModelActivity;
+import com.dzenm.naughty.ui.adapter.LogItemAdapter;
 import com.dzenm.naughty.ui.http.HttpBean;
 import com.dzenm.naughty.util.Utils;
+import com.dzenm.naughty.util.ViewUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,6 +62,7 @@ public class Naughty extends BaseNaughty {
      */
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams mLayoutParams;
+
     /**
      * 悬浮窗
      */
@@ -183,26 +188,59 @@ public class Naughty extends BaseNaughty {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    public void onCreate(NaughtyService service) {
+    public void onCreate(final NaughtyService service) {
         this.mService = service;
 
         if (Utils.checkOverlaysPermission(service)) {
             mWindowManager = (WindowManager) service.getSystemService(Context.WINDOW_SERVICE);
-            mLayoutParams = createFloatingViewParams();
+            mLayoutParams = ViewUtils.createFloatingViewParams();
 
             mDecorView = new FrameLayout(mService);
             mDecorView.setLayoutParams(new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT
             ));
             if (mIFloatingView == null) {
-                mDecorView.addView(createFloatingView(service));
+//                mDecorView.addView(ViewUtils.createFloatingView(service));
+                final LogItemAdapter adapter = new LogItemAdapter();
+                final String[] items = new String[]{"N", "V", "D", "I", "W", "E"};
+                mDecorView.addView(ViewUtils.createFloatingLogModel(service, adapter, items));
+
+                final LinearLayout parent = (LinearLayout) mDecorView.getChildAt(0);
+                final LinearLayout titleLayout = (LinearLayout) parent.getChildAt(0);
+                final RecyclerView recyclerView = (RecyclerView) parent.getChildAt(1);
+                recyclerView.setVerticalScrollBarEnabled(true);
+                final TextView selected = (TextView) titleLayout.getChildAt(1);
+                final ImageView network = (ImageView) titleLayout.getChildAt(2);
+
+                ViewUtils.createDialog(service, items, selected);
+                LogHelper.getInstance().init(Process.myPid()).start(new LogHelper.OnChangeListener() {
+                    @Override
+                    public void onChanged(String log) {
+                        mDecorView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                adapter.notifyDataSetChanged();
+                                int size = adapter.getItemCount();
+                                recyclerView.smoothScrollToPosition(size);
+                            }
+                        });
+                    }
+                });
+                adapter.setData(LogHelper.getInstance().getData());
+
+                network.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        startActivity(mService);
+                    }
+                });
             } else {
                 mDecorView.addView(mIFloatingView.create(mDecorView));
             }
             mDecorView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    startActivity(mService);
+
                 }
             });
             mDecorView.setOnTouchListener(new FloatingTouchListener());
@@ -263,44 +301,6 @@ public class Naughty extends BaseNaughty {
             // 如果是移动事件不触发OnClick事件，防止移动的时候一放手形成点击事件
             return isMove;
         }
-    }
-
-    /**
-     * 创建Floating View配置信息
-     *
-     * @return Floating View配置信息
-     */
-    private WindowManager.LayoutParams createFloatingViewParams() {
-        WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            layoutParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
-        } else {
-            layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
-        }
-        layoutParams.gravity = Gravity.END | Gravity.CENTER_VERTICAL;
-        layoutParams.format = PixelFormat.RGBA_8888;
-        layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-        layoutParams.width = 200;
-        layoutParams.height = 200;
-        layoutParams.x = 0;
-        layoutParams.y = 0;
-        return layoutParams;
-    }
-
-    /**
-     * 创建Floating View
-     *
-     * @param context 上下文
-     * @return Floating View
-     */
-    private TextView createFloatingView(Context context) {
-        TextView textView = new TextView(context);
-        textView.setText("网络调试");
-        textView.setBackgroundColor(Color.RED);
-        textView.setGravity(Gravity.CENTER);
-        textView.setBackgroundResource(R.drawable.ic_home_circle);
-        return textView;
     }
 
     public interface OnRequestListener {

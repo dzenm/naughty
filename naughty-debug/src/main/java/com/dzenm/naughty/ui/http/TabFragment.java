@@ -16,6 +16,9 @@ import com.dzenm.naughty.util.ViewUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @author dzenm
+ */
 public class TabFragment extends BaseFragment {
 
     private static final String BUNDLE_DATA = "BUNDLE_DATA";
@@ -23,10 +26,14 @@ public class TabFragment extends BaseFragment {
     static final int BUNDLE_REQUEST = 1;
     static final int BUNDLE_RESPONSE = 2;
 
-    // 保存的需要显示的数据
+    /**
+     * 保存的需要显示的数据
+     */
     private Map<String, String> data;
 
-    // 根布局
+    /**
+     * 根布局
+     */
     private LinearLayout mParent;
 
     /**
@@ -80,7 +87,9 @@ public class TabFragment extends BaseFragment {
 
             LinearLayout titleLayout = ViewUtils.newTitleLayout(mActivity);
             titleLayout.addView(ViewUtils.newTitleView(mActivity, key));
-            if (!isBody) titleLayout.addView(ViewUtils.newContentView(mActivity, value));
+            if (!isBody) {
+                titleLayout.addView(ViewUtils.newContentView(mActivity, value));
+            }
             mParent.addView(titleLayout);
             if (isBody) {
                 mParent.addView(ViewUtils.newBodyView(mActivity, Utils.formatJson(value, false)));

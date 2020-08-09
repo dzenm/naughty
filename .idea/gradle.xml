@@ -12,6 +12,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/core" />
+            <option value="$PROJECT_DIR$/crash" />
+            <option value="$PROJECT_DIR$/log" />
             <option value="$PROJECT_DIR$/naughty-debug" />
             <option value="$PROJECT_DIR$/naughty-release" />
           </set>

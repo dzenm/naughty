@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.dzenm.crash">
+
+    <application>
+        <service android:name=".UploadLogService" />
+        <service android:name=".RestartService" />
+    </application>
+</manifest>

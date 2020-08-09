@@ -65,7 +65,6 @@ public class ListFragment extends BaseFragment implements
             Naughty.getInstance().clear();
             mAdapter.notifyDataSetChanged();
         } else if (item.getItemId() == R.id.setting) {
-            // TODO Somethings
             com.dzenm.naughty.ui.file.ListFragment fragment = com.dzenm.naughty.ui.file.ListFragment.newInstance();
             Utils.switchFragment(
                     mActivity.getSupportFragmentManager(),

@@ -3,6 +3,7 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
       <module name="core" target="1.7" />
+      <module name="log" target="1.7" />
     </bytecodeTargetLevel>
   </component>
 </project>

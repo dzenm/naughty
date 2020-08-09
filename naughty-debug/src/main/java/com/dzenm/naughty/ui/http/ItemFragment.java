@@ -95,5 +95,4 @@ public class ItemFragment extends BaseFragment {
         return parent;
     }
 
-
 }
