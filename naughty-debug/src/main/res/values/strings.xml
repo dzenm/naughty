@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="item_close">关闭</string>
+    <string name="item_clear">清除所有</string>
+    <string name="item_cache">数据库查看</string>
+    <string name="item_setting">设置</string>
+</resources>

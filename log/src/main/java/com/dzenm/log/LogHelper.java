@@ -13,7 +13,7 @@ import java.util.Locale;
  * @author dzenm
  * <pre>
  * 使用方法
- * LogHelper.getInstance().init(Process.myPid()).setTag("DZY").start(this);
+ * LogHelper.getInstance().setTag("DZY").start(this);
  * public void onChanged(final String log) {
  *     runOnUiThread(new Runnable() {
  *         public void run() {
@@ -25,7 +25,7 @@ import java.util.Locale;
  */
 public class LogHelper {
 
-    public static final int LEVEL_NONE = 0;
+    public static final int LEVEL_NONE = 1;
     public static final int LEVEL_VERBOSE = 2;
     public static final int LEVEL_DEBUG = 3;
     public static final int LEVEL_INFO = 4;
@@ -69,7 +69,7 @@ public class LogHelper {
     private int mLevel = LEVEL_NONE;
 
     private LogHelper() {
-
+        mPid = android.os.Process.myPid();
     }
 
     public static LogHelper getInstance() {
@@ -80,11 +80,6 @@ public class LogHelper {
                 }
             }
         return sInstance;
-    }
-
-    public LogHelper init(int pid) {
-        mPid = pid;
-        return this;
     }
 
     /**
@@ -111,31 +106,13 @@ public class LogHelper {
 
     /**
      * 重置日志打印的条件
-     *
-     * @param level 日志级别
-     * @return this
      */
-    public LogHelper reset(int level) {
-        if (mTag == null || "".equals(mTag)) {
-            mTag = "*";
+    public void reset() {
+        reset(mLevel);
+        if (mLogThread != null) {
+            mLogThread.mCommands = mCommands;
+            mLogThread.isRest = true;
         }
-        System.out.println(TAG + "日志过滤TAG: " + mTag);
-        if (level == LEVEL_VERBOSE) {
-            mCommands = "logcat -v brief -s " + mTag + ":v";
-        } else if (level == LEVEL_DEBUG) {
-            mCommands = "logcat -v brief -s " + mTag + ":d";
-        } else if (level == LEVEL_INFO) {
-            mCommands = "logcat -v brief -s " + mTag + ":i";
-        } else if (level == LEVEL_WARN) {
-            mCommands = "logcat -v brief -s " + mTag + ":w";
-        } else if (level == LEVEL_ERROR) {
-            mCommands = "logcat -v brief -s " + mTag + ":e";
-        } else if (level == LEVEL_NONE) {
-            System.out.println(TAG + "打印所有的日志信息");
-            mCommands = "logcat -v brief ";
-        }
-        System.out.println(TAG + "日志输出命令: " + mCommands);
-        return this;
     }
 
     /**
@@ -163,10 +140,14 @@ public class LogHelper {
      * @return this
      */
     public LogHelper start(OnChangeListener mOnChangeListener) {
-        reset(mLevel);
+        reset();
         if (mLogThread == null) {
-            mLogThread = new LogThread(mCommands, String.valueOf(mPid));
+            mLogThread = new LogThread(String.valueOf(mPid));
+            mLogThread.mCommands = mCommands;
             mLogThread.mOnChangeListener = mOnChangeListener;
+        }
+        if (mLogThread.isAlive()) {
+            mLogThread.interrupt();
         }
         if (!mLogThread.isAlive()) {
             mLogThread.start();
@@ -213,6 +194,32 @@ public class LogHelper {
     }
 
     /**
+     * 重置日志打印的条件
+     *
+     * @param level 日志级别
+     */
+    private void reset(int level) {
+        if (mTag == null || "".equals(mTag)) {
+            mTag = "*";
+        }
+        System.out.println(TAG + "日志过滤TAG: " + mTag + ", 日志Level: " + level);
+        if (level == LEVEL_VERBOSE) {
+            mCommands = "logcat -v brief -s " + mTag + ":v";
+        } else if (level == LEVEL_DEBUG) {
+            mCommands = "logcat -v brief -s " + mTag + ":d";
+        } else if (level == LEVEL_INFO) {
+            mCommands = "logcat -v brief -s " + mTag + ":i";
+        } else if (level == LEVEL_WARN) {
+            mCommands = "logcat -v brief -s " + mTag + ":w";
+        } else if (level == LEVEL_ERROR) {
+            mCommands = "logcat -v brief -s " + mTag + ":e";
+        } else if (level == LEVEL_NONE) {
+            mCommands = "logcat -v brief -s " + mTag;
+        }
+        System.out.println(TAG + "日志输出命令: " + mCommands);
+    }
+
+    /**
      * 日志输出的线程, 负责打印, 处理并格式化, 控制日志的输出, 保存日志
      */
     private class LogThread extends Thread {
@@ -225,12 +232,12 @@ public class LogHelper {
         private BufferedReader mBufferedReader;
 
         private boolean mRunning = true;
+        private boolean isRest = false;
         private OnChangeListener mOnChangeListener;
 
         private List<String> mData = new ArrayList<>();
 
-        private LogThread(String commands, String pid) {
-            mCommands = commands;
+        private LogThread(String pid) {
             mPid = pid;
         }
 
@@ -242,26 +249,26 @@ public class LogHelper {
         public void run() {
             super.run();
             try {
-                mLogcatProcess = Runtime.getRuntime().exec(mCommands);
-                mBufferedReader = new BufferedReader(
-                        new InputStreamReader(mLogcatProcess.getInputStream()), 1024
-                );
+                execLogCommand();
                 String line;
                 while (mRunning && (line = mBufferedReader.readLine()) != null) {
                     if (!mRunning) {
                         break;
                     }
+                    if (isRest) {
+                        execLogCommand();
+                        isRest = false;
+                    }
+                    ;
                     if (line.length() == 0) {
                         continue;
                     }
                     SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss:SSS", Locale.getDefault());
                     String time = format.format(new Date());
                     if (line.contains(mPid)) {
-                        String textLine = "[" + time + "] " + line + "\n";
-                        if (mOnChangeListener != null) {
-                            mOnChangeListener.onChanged(textLine);
-                        }
-                        adjustCount(textLine);
+                        String text = "[" + time + "] " + line + "\n";
+                        callLogChangedListener(text);
+                        adjustCount(text);
                     }
                 }
                 mBufferedReader.close();
@@ -281,6 +288,21 @@ public class LogHelper {
                         e.printStackTrace();
                     }
                 }
+            }
+        }
+
+        private void execLogCommand() throws IOException {
+            mData.clear();
+            mLogcatProcess = Runtime.getRuntime().exec(mCommands);
+            mBufferedReader = new BufferedReader(
+                    new InputStreamReader(mLogcatProcess.getInputStream()), 1024
+            );
+            System.out.println(TAG + "执行Log输出命令...");
+        }
+
+        private void callLogChangedListener(String text) {
+            if (mOnChangeListener != null) {
+                mOnChangeListener.onChanged(text);
             }
         }
 

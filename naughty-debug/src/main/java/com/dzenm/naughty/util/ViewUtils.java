@@ -1,6 +1,7 @@
 package com.dzenm.naughty.util;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -19,6 +20,7 @@ import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -27,6 +29,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -37,6 +40,7 @@ import android.widget.Toast;
 import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.ListPopupWindow;
@@ -48,6 +52,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
+import com.dzenm.log.LogHelper;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.ui.MainModelActivity;
 import com.dzenm.naughty.ui.adapter.TabAdapter;
@@ -61,10 +66,9 @@ public class ViewUtils {
      *
      * @param context 上下文
      * @param adapter RecyclerView适配器
-     * @param items   选项
      * @return Floating View
      */
-    public static LinearLayout createFloatingLogModel(Context context, RecyclerView.Adapter adapter, String[] items) {
+    public static LinearLayout createFloatingLogModel(Context context, RecyclerView.Adapter adapter) {
         LinearLayout parent = new LinearLayout(context);
         int width = ViewUtils.getWidth() * 3 / 8;
         int height = width * 4 / 3;
@@ -72,6 +76,8 @@ public class ViewUtils {
         parent.setOrientation(LinearLayout.VERTICAL);
 
         int padding = dp2px(4);
+
+        // 标题栏
         LinearLayout titleLayout = new LinearLayout(context);
         titleLayout.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
@@ -79,6 +85,7 @@ public class ViewUtils {
         titleLayout.setGravity(Gravity.CENTER_VERTICAL);
         titleLayout.setPadding(padding, 0, padding, 0);
 
+        // 标题
         TextView title = new TextView(context);
         title.setLayoutParams(new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1
@@ -89,21 +96,10 @@ public class ViewUtils {
         title.setMaxLines(1);
         title.setPadding(padding, padding, padding, padding);
 
-        TextView selected = new TextView(context);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT
-        );
-        params.rightMargin = params.leftMargin = padding;
-        selected.setLayoutParams(params);
-        selected.setPadding(padding, 0, padding, 0);
-        selected.setGravity(Gravity.CENTER);
-        selected.setTextColor(context.getResources().getColor(android.R.color.white));
-        selected.setText(items[0]);
-
         titleLayout.addView(title);
-        titleLayout.addView(selected);
         titleLayout.addView(createNetworkView(context, dp2px(16)));
 
+        // 显示日志的RecyclerView
         RecyclerView recyclerView = createRecyclerView(context, adapter);
         titleLayout.setBackgroundColor(0xDD212121);
         recyclerView.setBackgroundColor(0xCC212121);
@@ -172,6 +168,70 @@ public class ViewUtils {
         return parent;
     }
 
+    public static void createDialog(final Context context, final String[] items) {
+        LinearLayout contentLayout = new LinearLayout(context);
+        contentLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        int padding = dp2px(16);
+        contentLayout.setOrientation(LinearLayout.HORIZONTAL);
+        contentLayout.setPadding(padding, 0, padding, 0);
+
+        final EditText editText = new EditText(context);
+        editText.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1
+        ));
+
+        final TextView levelView = new TextView(context);
+        levelView.setLayoutParams(new LinearLayout.LayoutParams(
+                dp2px(100), LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+        String text = "Level: " + items[0];
+        levelView.setText(text);
+        levelView.setGravity(Gravity.CENTER);
+        levelView.setPadding(padding, 0, padding, 0);
+
+        levelView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createListDialog(context, items, levelView);
+            }
+        });
+
+        contentLayout.addView(editText);
+        contentLayout.addView(levelView);
+
+        new AlertDialog.Builder(context)
+                .setTitle("日志过滤")
+                .setView(contentLayout)
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String text = levelView.getText().toString();
+                        String l = text.substring(text.length() - 2).trim();
+                        int level = 3;
+                        for (int i = 0; i < items.length; i++) {
+                            if (l.equals(items[i])) {
+                                level = i + 1;
+                                break;
+                            }
+                        }
+                        String tag = editText.getText().toString().trim();
+                        LogHelper.getInstance().setTag(tag)
+                                .setLevel(level)
+                                .reset();
+                    }
+                })
+                .create()
+                .show();
+    }
+
     /**
      * 创建Log筛选下拉框
      *
@@ -179,7 +239,7 @@ public class ViewUtils {
      * @param items      列表内容
      * @param anchorView dialog显示在锚点View的下方
      */
-    public static void createDialog(
+    public static void createListDialog(
             Context context, final String[] items, final TextView anchorView
     ) {
         final ListPopupWindow popupWindow = new ListPopupWindow(context);
@@ -192,7 +252,8 @@ public class ViewUtils {
         popupWindow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                anchorView.setText(items[position]);
+                String text = "Level: " + items[position];
+                anchorView.setText(text);
                 popupWindow.dismiss();
             }
         });

@@ -41,9 +41,9 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation 'com.squareup.okhttp3:okhttp:3.14.0'
-    releaseImplementation project(":naughty-release")
-    debugImplementation project(":naughty-debug")
-//    releaseImplementation 'com.github.dzenm.naughty:naughty-release:1.4.1'
-//    debugImplementation 'com.github.dzenm.naughty:naughty-debug:1.4.1'
+//    debugImplementation project(":naughty-debug")
+//    releaseImplementation project(":naughty-release")
+    releaseImplementation 'com.github.dzenm.naughty:naughty-release:1.5.1'
+    debugImplementation 'com.github.dzenm.naughty:naughty-debug:1.5.1'
 
 }

@@ -3,7 +3,6 @@ package com.dzenm.naughty;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Process;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,7 +10,6 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -202,18 +200,15 @@ public class Naughty extends BaseNaughty {
             if (mIFloatingView == null) {
 //                mDecorView.addView(ViewUtils.createFloatingView(service));
                 final LogItemAdapter adapter = new LogItemAdapter();
-                final String[] items = new String[]{"N", "V", "D", "I", "W", "E"};
-                mDecorView.addView(ViewUtils.createFloatingLogModel(service, adapter, items));
+                mDecorView.addView(ViewUtils.createFloatingLogModel(service, adapter));
 
                 final LinearLayout parent = (LinearLayout) mDecorView.getChildAt(0);
                 final LinearLayout titleLayout = (LinearLayout) parent.getChildAt(0);
                 final RecyclerView recyclerView = (RecyclerView) parent.getChildAt(1);
                 recyclerView.setVerticalScrollBarEnabled(true);
-                final TextView selected = (TextView) titleLayout.getChildAt(1);
-                final ImageView network = (ImageView) titleLayout.getChildAt(2);
+                final ImageView network = (ImageView) titleLayout.getChildAt(1);
 
-                ViewUtils.createDialog(service, items, selected);
-                LogHelper.getInstance().init(Process.myPid()).start(new LogHelper.OnChangeListener() {
+                LogHelper.getInstance().start(new LogHelper.OnChangeListener() {
                     @Override
                     public void onChanged(String log) {
                         mDecorView.post(new Runnable() {

@@ -13,9 +13,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 
-import com.dzenm.naughty.base.BaseFragment;
 import com.dzenm.naughty.Naughty;
 import com.dzenm.naughty.R;
+import com.dzenm.naughty.base.BaseFragment;
 import com.dzenm.naughty.service.NaughtyService;
 import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
@@ -57,20 +57,23 @@ public class ListFragment extends BaseFragment implements
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.close) {
-            Naughty.getInstance().setShowNotification(false);
-            mActivity.stopService(new Intent(mActivity, NaughtyService.class));
-            mActivity.back(true);
-        } else if (item.getItemId() == R.id.clear) {
-            Naughty.getInstance().clear();
-            mAdapter.notifyDataSetChanged();
-        } else if (item.getItemId() == R.id.setting) {
+        if (item.getItemId() == R.id.setting) {
+            final String[] items = new String[]{"N", "V", "D", "I", "W", "E"};
+            ViewUtils.createDialog(mActivity, items);
+        } else if (item.getItemId() == R.id.cache) {
             com.dzenm.naughty.ui.file.ListFragment fragment = com.dzenm.naughty.ui.file.ListFragment.newInstance();
             Utils.switchFragment(
                     mActivity.getSupportFragmentManager(),
                     this,
                     fragment
             );
+        }  else if (item.getItemId() == R.id.clear) {
+            Naughty.getInstance().clear();
+            mAdapter.notifyDataSetChanged();
+        } else if (item.getItemId() == R.id.close) {
+            Naughty.getInstance().setShowNotification(false);
+            mActivity.stopService(new Intent(mActivity, NaughtyService.class));
+            mActivity.back(true);
         }
         return super.onOptionsItemSelected(item);
     }
