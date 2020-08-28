@@ -70,7 +70,7 @@ class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
         holder.tvStatus.setText(statusString);
         holder.tvStatus.setTextColor(ViewUtils.resolveColor(context, color));
 
-        String url = bean.getUrl();
+        String url = bean.getRequestUrl();
 
         String urlString = bean.getMethod() + "  " + Uri.parse(url).getPath();
         int index = urlString.indexOf("/");

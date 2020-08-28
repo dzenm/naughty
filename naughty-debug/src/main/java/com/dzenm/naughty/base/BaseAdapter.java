@@ -13,6 +13,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
+/**
+ * @author dzenm
+ */
 public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder> {
 
     protected Context context;

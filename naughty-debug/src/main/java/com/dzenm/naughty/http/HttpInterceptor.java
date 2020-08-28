@@ -62,7 +62,6 @@ public class HttpInterceptor extends BaseInterceptor {
         mContext = context;
     }
 
-    @SuppressWarnings("unchecked")
     @NonNull
     @Override
     public Response intercept(Chain chain) throws IOException {
@@ -76,8 +75,11 @@ public class HttpInterceptor extends BaseInterceptor {
             // 保存请求及返回的数据
             HttpBean bean = new HttpBean();
             mNaughty.add(bean);
+
+            // 请求的ID
             bean.setId(mNextRequestId.getAndIncrement());
 
+            // 请求开始的时间及状态
             bean.setCurrentTime(getCurrentTime());
             bean.setLoadingState(Naughty.START);
             setRequestState(bean);
@@ -85,13 +87,14 @@ public class HttpInterceptor extends BaseInterceptor {
             // 请求内容
             RequestBody requestBody = request.body();
             boolean hasRequestBody = requestBody != null;
+
             // 请求协议类型
             Connection connection = chain.connection();
             Protocol protocol = connection != null ? connection.protocol() : Protocol.HTTP_1_1;
 
             // 保存请求的数据
             bean.setProtocol(protocol.toString());
-            bean.setUrl(request.url().toString());
+            bean.setRequestUrl(request.url().toString());
             bean.setMethod(request.method());
 
             Map<String, String> requestHeader = new LinkedHashMap<>();
@@ -130,50 +133,6 @@ public class HttpInterceptor extends BaseInterceptor {
             long startNs = System.nanoTime();
             try {
                 response = chain.proceed(request);
-                tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
-
-                // 保存返回的数据
-                bean.setStatus(String.valueOf(response.code()));
-                bean.setMessage(response.message());
-                bean.setTime(String.valueOf(tookMs));
-                bean.setFromDiskCache(response.cacheResponse() != null);
-                bean.setConnectionId(connection == null ? 0 : connection.hashCode());
-
-                Map<String, String> responseHeader = new LinkedHashMap();
-                Headers responseHeaders = response.headers();
-                for (int i = 0, count = responseHeaders.size(); i < count; i++) {
-                    responseHeader.put(responseHeaders.name(i), responseHeaders.value(i));
-                }
-                bean.setResponseHeaders(responseHeader);
-
-                ResponseBody responseBody = response.body();
-                if (responseBody != null) {
-                    // 返回的请求体内容
-                    BufferedSource source = responseBody.source();
-                    source.request(Long.MAX_VALUE);     // Buffer the entire body.
-                    Buffer buffer = source.getBuffer();
-
-                    Charset charset = UTF8;
-                    MediaType contentType = responseBody.contentType();
-                    if (contentType != null) {
-                        charset = contentType.charset(UTF8);
-                    }
-
-                    bean.setResponseSize(String.valueOf(buffer.size()));
-                    if (!isPlaintext(buffer)) {
-                        bean.setResponseBody("binary: " + buffer.size() + "-byte body omitted)");
-                        return response;
-                    }
-                    if (charset != null) {
-                        bean.setResponseBody(buffer.clone().readString(charset));
-                    }
-                } else {
-                    bean.setResponseBody("");
-                }
-
-                bean.setLoadingState(Naughty.STOP);
-                setRequestState(bean);
-                return response;
             } catch (Exception e) {
                 tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
                 bean.setStatus("");
@@ -189,6 +148,53 @@ public class HttpInterceptor extends BaseInterceptor {
                 setRequestState(bean);
                 throw e;
             }
+
+            tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
+
+            // 保存返回的数据
+            bean.setStatus(String.valueOf(response.code()));
+            bean.setMessage(response.message());
+            bean.setMessage(response.request().url().toString());
+            bean.setTime(String.valueOf(tookMs));
+            bean.setResponseUrl(response.request().url().toString());
+            bean.setFromDiskCache(response.cacheResponse() != null);
+            bean.setConnectionId(connection == null ? 0 : connection.hashCode());
+
+            Map<String, String> responseHeader = new LinkedHashMap();
+            Headers responseHeaders = response.headers();
+            for (int i = 0, count = responseHeaders.size(); i < count; i++) {
+                responseHeader.put(responseHeaders.name(i), responseHeaders.value(i));
+            }
+            bean.setResponseHeaders(responseHeader);
+
+            ResponseBody responseBody = response.body();
+            if (responseBody != null) {
+                // 返回的请求体内容
+                BufferedSource source = responseBody.source();
+                source.request(Long.MAX_VALUE);     // Buffer the entire body.
+                Buffer buffer = source.getBuffer();
+
+                Charset charset = UTF8;
+                MediaType contentType = responseBody.contentType();
+                if (contentType != null) {
+                    charset = contentType.charset(UTF8);
+                }
+
+                bean.setResponseSize(String.valueOf(buffer.size()));
+                if (!isPlaintext(buffer)) {
+                    bean.setResponseBody("binary: " + buffer.size() + "-byte body omitted)");
+                    return response;
+                }
+                if (charset != null) {
+                    bean.setResponseBody(buffer.clone().readString(charset));
+                }
+            } else {
+                bean.setResponseBody("");
+            }
+
+            bean.setLoadingState(Naughty.STOP);
+            setRequestState(bean);
+            return response;
         }
         return chain.proceed(request);
     }
@@ -198,6 +204,11 @@ public class HttpInterceptor extends BaseInterceptor {
         return new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
     }
 
+    /**
+     * 设置请求的状态
+     *
+     * @param bean 请求保存的数据
+     */
     private void setRequestState(HttpBean bean) {
         Naughty.OnRequestListener listener = mNaughty.getOnRequestListener();
         if (listener != null) {
@@ -207,7 +218,7 @@ public class HttpInterceptor extends BaseInterceptor {
             Log.d(TAG, "show notification");
             String status = bean.getStatus();
             status = mNaughty.isHttpFinished(bean.getLoadingState()) ? status : "...";
-            createNotification(mContext, bean.getId(), status, bean.getUrl());
+            createNotification(mContext, bean.getId(), status, bean.getRequestUrl());
         }
     }
 

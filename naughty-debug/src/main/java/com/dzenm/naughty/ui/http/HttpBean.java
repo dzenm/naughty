@@ -16,16 +16,17 @@ public class HttpBean implements Parcelable {
     private String currentTime;
     private int loadingState;                   // 1-START, 2-RUNNING, 3-STOP
 
-    private String protocol;
-    private String method;
-    private String url;
-    private String requestSize;
-    private String requestBody;
+    private String protocol;                    // 请求协议:
+    private String method;                      // 请求方法: GET
+    private String requestUrl;                  // 请求url:  https://baidu.com
+    private String requestSize;                 // 请求数据大小:  7-byte
+    private String requestBody;                 // 请求携带的内容
     private Map<String, String> requestHeaders = new LinkedHashMap<>();
 
     private String status;
     private String time;                        // 请求所用的时间: 3211ms
     private String responseSize;                // 请求返回的大小: 524-byte
+    private String responseUrl;                 // 请求返回的url
     private boolean fromDiskCache;              // 是否从缓存获取
     private int connectionId;                   // 连接的Id
     private String message;                     // 请求返回的结果
@@ -72,12 +73,12 @@ public class HttpBean implements Parcelable {
         this.method = method;
     }
 
-    public String getUrl() {
-        return TextUtils.isEmpty(url) ? "unknown url" : url;
+    public String getRequestUrl() {
+        return TextUtils.isEmpty(requestUrl) ? "unknown url" : requestUrl;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setRequestUrl(String url) {
+        this.requestUrl = url;
     }
 
     public String getRequestSize() {
@@ -109,7 +110,7 @@ public class HttpBean implements Parcelable {
         Map<String, String> map = new LinkedHashMap<>();
         map.put("Request Protocol", getProtocol());
         map.put("Request Method", getMethod());
-        map.put("Request URL", getUrl());
+        map.put("Request URL", getRequestUrl());
         map.put("Content-Length", getRequestSize());
         if (requestHeaders.size() != 0) {
             map.putAll(requestHeaders);
@@ -141,6 +142,14 @@ public class HttpBean implements Parcelable {
 
     public void setResponseSize(String responseSize) {
         this.responseSize = responseSize;
+    }
+
+    public String getResponseUrl() {
+        return TextUtils.isEmpty(responseUrl) ? "unknown url" : responseUrl;
+    }
+
+    public void setResponseUrl(String responseUrl) {
+        this.responseUrl = responseUrl;
     }
 
     public boolean isFromDiskCache() {
@@ -188,6 +197,7 @@ public class HttpBean implements Parcelable {
         map.put("Status Code", getStatus());
         map.put("Duration Time", getTime());
         map.put("Content-Length", getResponseSize());
+        map.put("Response Url", getResponseUrl());
         if (responseHeaders.size() != 0) {
             map.putAll(responseHeaders);
         }
@@ -208,7 +218,7 @@ public class HttpBean implements Parcelable {
 
         protocol = in.readString();
         method = in.readString();
-        url = in.readString();
+        requestUrl = in.readString();
         requestSize = in.readString();
         requestBody = in.readString();
         requestHeaders = in.readHashMap(HashMap.class.getClassLoader());
@@ -216,6 +226,7 @@ public class HttpBean implements Parcelable {
         status = in.readString();
         time = in.readString();
         responseSize = in.readString();
+        responseUrl = in.readString();
         fromDiskCache = in.readByte() != 0;
         connectionId = in.readInt();
         message = in.readString();
@@ -230,7 +241,7 @@ public class HttpBean implements Parcelable {
 
         dest.writeString(protocol);
         dest.writeString(method);
-        dest.writeString(url);
+        dest.writeString(requestUrl);
         dest.writeString(requestSize);
         dest.writeString(requestBody);
         dest.writeMap(requestHeaders);
@@ -238,6 +249,7 @@ public class HttpBean implements Parcelable {
         dest.writeString(status);
         dest.writeString(time);
         dest.writeString(responseSize);
+        dest.writeString(responseUrl);
         dest.writeByte((byte) (fromDiskCache ? 1 : 0));
         dest.writeInt(connectionId);
         dest.writeString(message);

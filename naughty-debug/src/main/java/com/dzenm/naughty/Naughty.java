@@ -18,8 +18,8 @@ import com.dzenm.log.LogHelper;
 import com.dzenm.naughty.http.HttpInterceptor;
 import com.dzenm.naughty.service.NaughtyService;
 import com.dzenm.naughty.ui.MainModelActivity;
-import com.dzenm.naughty.ui.adapter.LogItemAdapter;
 import com.dzenm.naughty.ui.http.HttpBean;
+import com.dzenm.naughty.ui.log.LogItemAdapter;
 import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
 
@@ -48,6 +48,10 @@ public class Naughty extends BaseNaughty {
 
     @SuppressLint("StaticFieldLeak")
     private static volatile Naughty sInstance;
+
+    /**
+     * Naughty 后台服务
+     */
     private NaughtyService mService;
 
     /**
@@ -62,9 +66,14 @@ public class Naughty extends BaseNaughty {
     private WindowManager.LayoutParams mLayoutParams;
 
     /**
-     * 悬浮窗
+     * 悬浮窗的root View
      */
     private FrameLayout mDecorView;
+
+    /**
+     * 设置悬浮窗的大小
+     */
+    private int mWidth = -1, mHeight = -1;
 
     /**
      * 请求的数据
@@ -119,6 +128,24 @@ public class Naughty extends BaseNaughty {
     }
 
     /**
+     * 设置悬浮窗的宽度
+     *
+     * @param width 悬浮窗的宽度(默认为屏幕的3/8)
+     */
+    public void setWidth(int width) {
+        this.mWidth = width;
+    }
+
+    /**
+     * 设置悬浮窗的高度
+     *
+     * @param height 悬浮窗的高度(默认为宽度的3/4)
+     */
+    public void setHeight(int height) {
+        this.mHeight = height;
+    }
+
+    /**
      * 清空数据
      */
     public void clear() {
@@ -145,6 +172,12 @@ public class Naughty extends BaseNaughty {
         }
     }
 
+    /**
+     * Http是否请求结束
+     *
+     * @param status 请求的状态码
+     * @return 是否结束Http请求
+     */
     public boolean isHttpFinished(int status) {
         return status == STOP;
     }
@@ -170,8 +203,8 @@ public class Naughty extends BaseNaughty {
         this.mOnRequestListener = listener;
     }
 
-    public void setIFloatingView(IFloatingView mIFloatingView) {
-        this.mIFloatingView = mIFloatingView;
+    public void setIFloatingView(IFloatingView floatingView) {
+        this.mIFloatingView = floatingView;
     }
 
     /**
@@ -197,10 +230,18 @@ public class Naughty extends BaseNaughty {
             mDecorView.setLayoutParams(new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT
             ));
+
+            if (mWidth == -1) {
+                mWidth = ViewUtils.getWidth() * 3 / 8;
+            }
+            if (mHeight == -1) {
+                mHeight = mWidth * 4 / 3;
+            }
+
             if (mIFloatingView == null) {
 //                mDecorView.addView(ViewUtils.createFloatingView(service));
                 final LogItemAdapter adapter = new LogItemAdapter();
-                mDecorView.addView(ViewUtils.createFloatingLogModel(service, adapter));
+                mDecorView.addView(ViewUtils.createFloatingLogModel(service, adapter, mWidth, mHeight));
 
                 final LinearLayout parent = (LinearLayout) mDecorView.getChildAt(0);
                 final LinearLayout titleLayout = (LinearLayout) parent.getChildAt(0);

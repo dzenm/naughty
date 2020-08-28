@@ -20,7 +20,6 @@ import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -56,6 +55,7 @@ import com.dzenm.log.LogHelper;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.ui.MainModelActivity;
 import com.dzenm.naughty.ui.adapter.TabAdapter;
+import com.dzenm.naughty.ui.log.WhiteDivideItemDecoration;
 
 public class ViewUtils {
 
@@ -66,12 +66,14 @@ public class ViewUtils {
      *
      * @param context 上下文
      * @param adapter RecyclerView适配器
+     * @param width   宽度
+     * @param height  高度
      * @return Floating View
      */
-    public static LinearLayout createFloatingLogModel(Context context, RecyclerView.Adapter adapter) {
+    public static LinearLayout createFloatingLogModel(
+            Context context, RecyclerView.Adapter adapter, int width, int height
+    ) {
         LinearLayout parent = new LinearLayout(context);
-        int width = ViewUtils.getWidth() * 3 / 8;
-        int height = width * 4 / 3;
         parent.setLayoutParams(new FrameLayout.LayoutParams(width, height));
         parent.setOrientation(LinearLayout.VERTICAL);
 
@@ -103,6 +105,7 @@ public class ViewUtils {
         RecyclerView recyclerView = createRecyclerView(context, adapter);
         titleLayout.setBackgroundColor(0xDD212121);
         recyclerView.setBackgroundColor(0xCC212121);
+        recyclerView.addItemDecoration(new WhiteDivideItemDecoration(Color.parseColor("#757575")));
         parent.addView(titleLayout);
         parent.addView(recyclerView);
         return parent;
@@ -133,7 +136,7 @@ public class ViewUtils {
         } else {
             layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
         }
-        layoutParams.gravity = Gravity.END | Gravity.CENTER_VERTICAL;
+        layoutParams.gravity = Gravity.END | Gravity.TOP;
         layoutParams.format = PixelFormat.RGBA_8888;
         layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
@@ -155,6 +158,7 @@ public class ViewUtils {
         parent.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT
         ));
+        parent.setForeground(resolveDrawable(context, android.R.attr.selectableItemBackground));
 
         TextView item = new TextView(context);
         item.setLayoutParams(new FrameLayout.LayoutParams(
@@ -168,6 +172,12 @@ public class ViewUtils {
         return parent;
     }
 
+    /**
+     * 创建日志过滤Dialog
+     *
+     * @param context 上下文
+     * @param items   日志等级
+     */
     public static void createDialog(final Context context, final String[] items) {
         LinearLayout contentLayout = new LinearLayout(context);
         contentLayout.setLayoutParams(new LinearLayout.LayoutParams(
@@ -267,6 +277,16 @@ public class ViewUtils {
 
     //************************************** Parent Layout ***************************************//
 
+    /**
+     * 创建root view(包含一个Toolbar, 和一个RecyclerView, 如果 inflater 为null, Toolbar也为空,
+     * 如果adapter为null, RecyclerView也为空)
+     *
+     * @param activity 上下文
+     * @param inflater 加载一个xml的layout
+     * @param adapter  RecyclerView adapter
+     * @param title    Toolbar标题
+     * @return LinearLayout
+     */
     public static LinearLayout createDecorView(
             MainModelActivity activity, LayoutInflater inflater, RecyclerView.Adapter adapter, CharSequence title
     ) {
@@ -378,8 +398,6 @@ public class ViewUtils {
         );
         child.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
         child.setTextColor(primaryTextColor());
-        child.setMaxLines(1);
-        child.setEllipsize(TextUtils.TruncateAt.END);
         child.setLayoutParams(params);
         child.setText(text);
         return child;
@@ -558,7 +576,7 @@ public class ViewUtils {
                 dp2px(radius), dp2px(radius), dp2px(radius), dp2px(radius)};
         normalDrawable.setCornerRadii(radiusIIII);
 
-        normalDrawable.setStroke(dp2px(1), resolveColor(context, R.attr.colorAccent));
+        normalDrawable.setStroke(dp2px(1), resolveColor(context, R.attr.colorButtonNormal));
 
         return new RippleDrawable(
                 ColorStateList.valueOf(resolveColor(context, R.attr.colorButtonNormal)),

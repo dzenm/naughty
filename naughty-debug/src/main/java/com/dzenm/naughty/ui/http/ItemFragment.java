@@ -63,7 +63,7 @@ public class ItemFragment extends BaseFragment {
 
         // 添加并设置Toolbar
         setHasOptionsMenu(true);
-        String title = data.getMethod() + "   " + Uri.parse(data.getUrl()).getPath();
+        String title = data.getMethod() + "   " + Uri.parse(data.getRequestUrl()).getPath();
         Toolbar toolbar = ViewUtils.createToolbar(mActivity, inflater, parent, title);
 
         // 添加并设置TabLayout

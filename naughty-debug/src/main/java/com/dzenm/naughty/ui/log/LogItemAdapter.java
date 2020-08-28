@@ -1,4 +1,4 @@
-package com.dzenm.naughty.ui.adapter;
+package com.dzenm.naughty.ui.log;
 
 import android.text.Html;
 import android.view.View;
@@ -22,6 +22,12 @@ public class LogItemAdapter extends BaseAdapter<String> {
     protected void onBindData(@NonNull ViewHolder holder, int position) {
         final String log = data.get(position);
         holder.getTextView(0).setText(Html.fromHtml(LogHelper.getInstance().format(log)));
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
         holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
