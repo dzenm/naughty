@@ -18,8 +18,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 
 import com.dzenm.naughty.Naughty;
+import com.dzenm.naughty.NaughtyService;
 import com.dzenm.naughty.R;
-import com.dzenm.naughty.service.NaughtyService;
 import com.dzenm.naughty.ui.http.ListFragment;
 import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
@@ -126,15 +126,16 @@ public class MainModelActivity extends AppCompatActivity {
      * @param activity 上下文
      */
     private void checkServiceWithEnabled(final AppCompatActivity activity) {
-        if (Naughty.isCreated || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
+        if (Naughty.getInstance().isCreated || Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
+            return;
 
         if (Utils.checkOverlaysPermission(activity)) {
             startService(new Intent(activity, NaughtyService.class));
         } else {
             new AlertDialog.Builder(activity)
-                    .setTitle("授权失败")
-                    .setMessage("未授予悬浮窗权限, 如需继续使用悬浮窗功能, 请前往授权")
-                    .setPositiveButton("前往授权", new DialogInterface.OnClickListener() {
+                    .setTitle(activity.getString(R.string.dialog_request_permission_failed_title))
+                    .setMessage(activity.getString(R.string.dialog_request_permission_failed_message))
+                    .setPositiveButton(activity.getString(R.string.dialog_request_permission_button_confirm), new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
@@ -143,7 +144,7 @@ public class MainModelActivity extends AppCompatActivity {
                             dialog.dismiss();
                         }
                     })
-                    .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    .setNegativeButton(activity.getString(R.string.dialog_button_cancel), new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.dismiss();

@@ -7,6 +7,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 import com.dzenm.log.LogHelper;
+import com.dzenm.naughty.R;
 import com.dzenm.naughty.base.BaseAdapter;
 import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
@@ -35,7 +36,9 @@ public class LogItemAdapter extends BaseAdapter<String> {
                 if (index != -1) {
                     String text = log.substring(index + 2);
                     Utils.copy(context, text);
-                    Toast.makeText(context, "复制成功: " + text, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, context.getString(R.string.toast_copy_text) + text,
+                            Toast.LENGTH_SHORT
+                    ).show();
                 }
                 return false;
             }

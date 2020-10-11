@@ -1,4 +1,4 @@
-package com.dzenm.naughty.ui.http;
+package com.dzenm.naughty.http;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -12,25 +12,25 @@ import java.util.Map;
 
 public class HttpBean implements Parcelable {
 
-    private int id;
-    private String currentTime;
+    private int id = 0;
+    private String currentTime = "";
     private int loadingState;                   // 1-START, 2-RUNNING, 3-STOP
 
-    private String protocol;                    // 请求协议:
-    private String method;                      // 请求方法: GET
-    private String requestUrl;                  // 请求url:  https://baidu.com
-    private String requestSize;                 // 请求数据大小:  7-byte
-    private String requestBody;                 // 请求携带的内容
+    private String protocol = "";               // 请求协议:
+    private String method = "";                 // 请求方法: GET
+    private String requestUrl = "";             // 请求url:  https://baidu.com
+    private String requestSize = "";            // 请求数据大小:  7-byte
+    private String requestBody = "";            // 请求携带的内容
     private Map<String, String> requestHeaders = new LinkedHashMap<>();
 
-    private String status;
-    private String time;                        // 请求所用的时间: 3211ms
-    private String responseSize;                // 请求返回的大小: 524-byte
-    private String responseUrl;                 // 请求返回的url
-    private boolean fromDiskCache;              // 是否从缓存获取
-    private int connectionId;                   // 连接的Id
-    private String message;                     // 请求返回的结果
-    private String responseBody;                // 请求返回的结果
+    private String status = "";
+    private String time = "";                   // 请求所用的时间: 3211ms
+    private String responseSize = "";           // 请求返回的大小: 524-byte
+    private String responseUrl = "";            // 请求返回的url
+    private boolean fromDiskCache = false;      // 是否从缓存获取
+    private int connectionId = 0;               // 连接的Id
+    private String message = "";                // 请求返回的结果
+    private String responseBody = "";           // 请求返回的结果
     private Map<String, String> responseHeaders = new LinkedHashMap<>();
 
     public int getId() {
@@ -42,7 +42,7 @@ public class HttpBean implements Parcelable {
     }
 
     public String getCurrentTime() {
-        return TextUtils.isEmpty(currentTime) ? "00:00:00" : currentTime;
+        return TextUtils.isEmpty(currentTime) ? "00:00:00 SSS" : Utils.format(currentTime);
     }
 
     public void setCurrentTime(String currentTime) {
@@ -99,7 +99,7 @@ public class HttpBean implements Parcelable {
     }
 
     public Map<String, String> getRequestHeaders() {
-        return requestHeaders == null ? new LinkedHashMap<String, String>() : requestHeaders;
+        return requestHeaders;
     }
 
     public void setRequestHeaders(Map<String, String> requestHeaders) {
@@ -115,12 +115,13 @@ public class HttpBean implements Parcelable {
         if (requestHeaders.size() != 0) {
             map.putAll(requestHeaders);
         }
+
         map.put("Request Body", getRequestBody());
         return map;
     }
 
     public String getStatus() {
-        return TextUtils.isEmpty(status) ? "" : status;
+        return TextUtils.isEmpty(status) ? "-1" : status;
     }
 
     public void setStatus(String status) {

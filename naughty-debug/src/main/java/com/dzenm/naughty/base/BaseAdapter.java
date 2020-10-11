@@ -5,12 +5,17 @@ import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,14 +24,14 @@ import java.util.List;
 public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder> {
 
     protected Context context;
-    protected List<T> data;
-    protected OnItemClickListener mOnItemClickListener;
+    protected List<T> data = new ArrayList<>();
+    protected OnItemClickListener<T> mOnItemClickListener;
 
     public void setData(List<T> data) {
         this.data = data;
     }
 
-    public void setOnItemClickListener(OnItemClickListener mOnItemClickListener) {
+    public void setOnItemClickListener(OnItemClickListener<T> mOnItemClickListener) {
         this.mOnItemClickListener = mOnItemClickListener;
     }
 
@@ -100,6 +105,26 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
             return (ImageView) getView().getChildAt(position);
         }
 
+        public ProgressBar getProgressBarId(int id) {
+            return (ProgressBar) getView(id);
+        }
+
+        public ProgressBar getProgressBar(int position) {
+            return (ProgressBar) getView().getChildAt(position);
+        }
+
+        public LinearLayout getLinearLayout(int position) {
+            return (LinearLayout) getView().getChildAt(position);
+        }
+
+        public RelativeLayout getRelativeLayout(int position) {
+            return (RelativeLayout) getView().getChildAt(position);
+        }
+
+        public FrameLayout getFrameLayout(int position) {
+            return (FrameLayout) getView().getChildAt(position);
+        }
+
         public View getView(int id) {
             View view = views.get(id);
             if (view == null) {
@@ -115,8 +140,8 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     }
 
 
-    public interface OnItemClickListener {
+    public interface OnItemClickListener<T> {
 
-        void onItemClick(Object data, int position);
+        void onItemClick(T data, int position);
     }
 }

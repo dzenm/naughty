@@ -1,4 +1,4 @@
-package com.dzenm.naughty.service;
+package com.dzenm.naughty;
 
 import android.app.Service;
 import android.content.Intent;
@@ -6,8 +6,6 @@ import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
-
-import com.dzenm.naughty.Naughty;
 
 /**
  * 记得在AndroidManifest添加服务
@@ -20,10 +18,7 @@ public class NaughtyService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "onCreate");
-
-        Naughty.isCreated = true;
-
+        Log.d(TAG, "Naughty Service is Create");
         Naughty.getInstance().onCreate(this);
     }
 
@@ -48,11 +43,8 @@ public class NaughtyService extends Service {
 
     @Override
     public void onDestroy() {
-        // 自杀服务
-        stopSelf();
         super.onDestroy();
-        Naughty.isCreated = false;
-        Log.d(TAG, "onDestroy");
+        Log.d(TAG, "Naughty Service is Destroy");
         Naughty.getInstance().onDestroy();
     }
 }

@@ -7,8 +7,10 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.dzenm.naughty.R;
 import com.dzenm.naughty.base.BaseFragment;
-import com.dzenm.naughty.shared.SharedPreferencesHelper;
+import com.dzenm.naughty.shared_preferences.SharedPreferencesHelper;
+import com.dzenm.naughty.ui.MainModelActivity;
 import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
 
@@ -17,8 +19,10 @@ import java.io.File;
 /**
  * @author dzenm
  * 2020/8/4
+ * <p>
+ * 显示 SharedPreference 文件列表页面
  */
-public class ListFragment extends BaseFragment implements ListAdapter.OnItemClickListener {
+public class ListFragment extends BaseFragment<MainModelActivity> implements ListAdapter.OnItemClickListener<File> {
 
     public static ListFragment newInstance() {
         return new ListFragment();
@@ -31,7 +35,9 @@ public class ListFragment extends BaseFragment implements ListAdapter.OnItemClic
         adapter.setOnItemClickListener(this);
         adapter.setData(SharedPreferencesHelper.getInstance().init(mActivity).getSharedPreferenceFiles());
 
-        return ViewUtils.createDecorView(mActivity, inflater, adapter, "SharedPreferences File");
+        return ViewUtils.createDecorView(
+                mActivity, inflater, adapter, mActivity.getString(R.string.shared_preferences_title)
+        );
     }
 
     @Override

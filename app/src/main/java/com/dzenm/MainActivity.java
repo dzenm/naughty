@@ -1,5 +1,8 @@
 package com.dzenm;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -27,14 +30,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        SharedPreferences sp = getSharedPreferences("test_login", Context.MODE_PRIVATE);
+        @SuppressLint("CommitPrefEdits") SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean("hello", true);
+        editor.putString("this is test", "test");
+        editor.apply();
+
         textView = findViewById(R.id.text);
 
-        textView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                provideOkHttpClient();
-            }
-        });
+        textView.setOnClickListener(v -> provideOkHttpClient());
     }
 
     /**
@@ -47,7 +51,8 @@ public class MainActivity extends AppCompatActivity {
         }
         OkHttpClient client = builder.build();
 
-        String url = "https://wwww.baidu.com";
+//        String url = "https://wwww.baidu.com";
+        String url = "https://www.wanandroid.com/article/list/0/json";
         final Request request = new Request.Builder()
                 .url(url)
                 .get()//默认就是GET请求，可以不写

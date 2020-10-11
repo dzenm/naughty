@@ -7,17 +7,19 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-
-import com.dzenm.naughty.ui.MainModelActivity;
 
 /**
  * @author dzenm
  * 2020/8/4
  */
-public class BaseFragment extends Fragment {
+public class BaseFragment<T extends AppCompatActivity> extends Fragment {
 
-    protected MainModelActivity mActivity;
+    protected static final String BUNDLE_DATA = "bundle_data";
+    protected static final String BUNDLE_FLAG = "bundle_flag";
+
+    protected T mActivity;
 
     public BaseFragment() {
     }
@@ -25,7 +27,7 @@ public class BaseFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mActivity = (MainModelActivity) getActivity();
+        mActivity = (T) getActivity();
     }
 
     @Override
@@ -35,19 +37,15 @@ public class BaseFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        View view = onCreateView(inflater, container);
-        initView();
-        return view;
+        return onCreateView(inflater, container);
     }
 
 
+    @Nullable
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container) {
         return null;
-    }
-
-    public void initView() {
-
     }
 }

@@ -1,18 +1,13 @@
-package com.dzenm.naughty.shared;
+package com.dzenm.naughty.shared_preferences;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.dzenm.naughty.util.Utils;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,10 +15,13 @@ import java.util.Map;
 /**
  * @author dzenm
  * 2020/8/4
+ * <p>
+ * SharedPreference 文件工具类
  */
 public class SharedPreferencesHelper {
 
     private static final String TAG = SharedPreferencesHelper.class.getSimpleName();
+
     @SuppressLint("StaticFieldLeak")
     private static SharedPreferencesHelper sInstance;
     private Context mContext;
@@ -43,7 +41,9 @@ public class SharedPreferencesHelper {
     }
 
     public SharedPreferencesHelper init(Context context) {
-        mContext = context;
+        if (mContext == null) {
+            mContext = context;
+        }
         return this;
     }
 
@@ -53,11 +53,8 @@ public class SharedPreferencesHelper {
      * @return SharedPreferences所有文件
      */
     public List<File> getSharedPreferenceFiles() {
-        List<File> files = Utils.getFiles(getSharedPreferencesPath(), null);
-        if (files == null) {
-            files = new ArrayList<>();
-        }
-        return files;
+        List<File> files = Utils.getFiles(getSharedPreferencesDir(), null);
+        return files == null ? new ArrayList<File>() : files;
     }
 
     /**
@@ -79,8 +76,7 @@ public class SharedPreferencesHelper {
      *
      * @return SharedPreferences文件夹
      */
-    private String getSharedPreferencesPath() {
-        String dir = mContext.getFilesDir().getParent();
-        return dir + "/shared_prefs";
+    private String getSharedPreferencesDir() {
+        return mContext.getFilesDir().getParent() + "/shared_prefs";
     }
 }

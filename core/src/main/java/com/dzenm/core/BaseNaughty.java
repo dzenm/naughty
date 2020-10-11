@@ -61,9 +61,8 @@ public abstract class BaseNaughty {
     /**
      * @see #isShowNotification()
      */
-    public BaseNaughty setShowNotification(boolean showNotification) {
+    public void setShowNotification(boolean showNotification) {
         isShowNotification = showNotification;
-        return this;
     }
 
 }

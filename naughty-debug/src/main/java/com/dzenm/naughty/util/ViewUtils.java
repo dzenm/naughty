@@ -37,7 +37,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.AttrRes;
+import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -47,6 +49,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
@@ -54,7 +57,6 @@ import androidx.viewpager.widget.ViewPager;
 import com.dzenm.log.LogHelper;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.ui.MainModelActivity;
-import com.dzenm.naughty.ui.adapter.TabAdapter;
 import com.dzenm.naughty.ui.log.WhiteDivideItemDecoration;
 
 public class ViewUtils {
@@ -92,8 +94,9 @@ public class ViewUtils {
         title.setLayoutParams(new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1
         ));
-        title.setText("Log(可拖动)");
-        title.setTextColor(context.getResources().getColor(android.R.color.white));
+
+        title.setText(context.getString(R.string.floating_log_title));
+        title.setTextColor(getColor(context, android.R.color.white));
         title.setEllipsize(TextUtils.TruncateAt.END);
         title.setMaxLines(1);
         title.setPadding(padding, padding, padding, padding);
@@ -103,9 +106,11 @@ public class ViewUtils {
 
         // 显示日志的RecyclerView
         RecyclerView recyclerView = createRecyclerView(context, adapter);
-        titleLayout.setBackgroundColor(0xDD212121);
-        recyclerView.setBackgroundColor(0xCC212121);
-        recyclerView.addItemDecoration(new WhiteDivideItemDecoration(Color.parseColor("#757575")));
+        titleLayout.setBackgroundColor(getColor(context, R.color.primary_transparent_color));
+        recyclerView.setBackgroundColor(getColor(context, R.color.secondary_transparent_color));
+        recyclerView.addItemDecoration(new WhiteDivideItemDecoration(
+                getColor(context, R.color.secondary_text_color)
+        ));
         parent.addView(titleLayout);
         parent.addView(recyclerView);
         return parent;
@@ -196,7 +201,7 @@ public class ViewUtils {
         levelView.setLayoutParams(new LinearLayout.LayoutParams(
                 dp2px(100), LinearLayout.LayoutParams.MATCH_PARENT
         ));
-        String text = "Level: " + items[0];
+        String text = context.getString(R.string.log_level_title) + items[0];
         levelView.setText(text);
         levelView.setGravity(Gravity.CENTER);
         levelView.setPadding(padding, 0, padding, 0);
@@ -212,15 +217,15 @@ public class ViewUtils {
         contentLayout.addView(levelView);
 
         new AlertDialog.Builder(context)
-                .setTitle("日志过滤")
+                .setTitle(context.getString(R.string.dialog_log_title))
                 .setView(contentLayout)
-                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                .setNegativeButton(context.getString(R.string.dialog_button_cancel), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
                     }
                 })
-                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                .setPositiveButton(context.getString(R.string.dialog_button_confirm), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String text = levelView.getText().toString();
@@ -250,19 +255,19 @@ public class ViewUtils {
      * @param anchorView dialog显示在锚点View的下方
      */
     public static void createListDialog(
-            Context context, final String[] items, final TextView anchorView
+            final Context context, final String[] items, final TextView anchorView
     ) {
         final ListPopupWindow popupWindow = new ListPopupWindow(context);
         popupWindow.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, items));
         popupWindow.setAnchorView(anchorView);
         popupWindow.setWidth(dp2px(32));
-        popupWindow.setBackgroundDrawable(new ColorDrawable(context.getResources().getColor(android.R.color.darker_gray)));
+        popupWindow.setBackgroundDrawable(new ColorDrawable(getColor(context, android.R.color.darker_gray)));
         popupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         popupWindow.setModal(true);
         popupWindow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String text = "Level: " + items[position];
+                String text = context.getString(R.string.log_level_title) + items[position];
                 anchorView.setText(text);
                 popupWindow.dismiss();
             }
@@ -380,14 +385,46 @@ public class ViewUtils {
 
     //************************************** Content View ****************************************//
 
+    public static LinearLayout newSubtitle(Context context, int topMargin, int bottomMargin, String subtitle) {
+        LinearLayout parent = new LinearLayout(context);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.topMargin = dp2px(topMargin);
+        params.bottomMargin = dp2px(bottomMargin);
+        parent.setLayoutParams(params);
+        parent.setOrientation(LinearLayout.VERTICAL);
+
+        TextView tvSubtitle = new TextView(context);
+        LinearLayout.LayoutParams subTitleParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        subTitleParams.bottomMargin = dp2px(bottomMargin);
+        tvSubtitle.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
+        tvSubtitle.setTextColor(getColor(context, R.color.subtitle_text_color));
+        tvSubtitle.setLayoutParams(subTitleParams);
+        tvSubtitle.setTextSize(18f);
+        tvSubtitle.setText(subtitle);
+
+        View divide = new View(context);
+        divide.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp2px(1)
+        ));
+        divide.setBackgroundColor(getColor(context, R.color.divide_color));
+
+        parent.addView(tvSubtitle);
+        parent.addView(divide);
+        return parent;
+    }
+
     public static LinearLayout newTitleLayout(Context context) {
         LinearLayout parent = new LinearLayout(context);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         );
         params.bottomMargin = dp2px(8);
-        parent.setOrientation(LinearLayout.HORIZONTAL);
         parent.setLayoutParams(params);
+        parent.setOrientation(LinearLayout.HORIZONTAL);
         return parent;
     }
 
@@ -396,10 +433,10 @@ public class ViewUtils {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 getWidth() / 3, LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        child.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-        child.setTextColor(primaryTextColor());
         child.setLayoutParams(params);
         child.setText(text);
+        child.setTextColor(getColor(context, R.color.primary_text_color));
+        child.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
         return child;
     }
 
@@ -411,7 +448,7 @@ public class ViewUtils {
         child.setLayoutParams(params);
         child.setLineSpacing(0f, 1.2f);
         if ((text.startsWith("{") || text.startsWith("[")) && (text.endsWith("}") || text.endsWith("]"))) {
-            text = Utils.formatJson(text, false);
+            text = Utils.formatJson(text);
         }
         child.setText(getContentViewStyle(context, text));
         // 为TextView设置完Span后，别忘了setMovementMethod
@@ -421,26 +458,23 @@ public class ViewUtils {
 
     public static SpannableString getContentViewStyle(final Context context, final String text) {
         SpannableString string = new SpannableString(text);
-        ForegroundColorSpan contentColor = new ForegroundColorSpan(secondaryTextColor());
+        ForegroundColorSpan contentColor = new ForegroundColorSpan(
+                getColor(context, R.color.secondary_text_color)
+        );
         ClickableSpan clickableSpan = new ClickableSpan() {
             @Override
             public void onClick(@NonNull View widget) {
-                String string = text;
-                if (text.contains("═") || text.contains("╔")
-                        || text.contains("╚") || text.contains("║")) {
-                    string = text.replace("═", "")
-                            .replace("╔", "")
-                            .replace("╚", "")
-                            .replace("║", "");
-                }
-                Utils.copy(context, string);
-                Toast.makeText(context, "复制成功: " + string, Toast.LENGTH_SHORT).show();
+                Utils.copy(context, text);
+                Toast.makeText(context, context.getString(R.string.toast_copy_text) + text,
+                        Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void updateDrawState(@NonNull TextPaint ds) {
-                ds.setColor(secondaryTextColor());             // 设置颜色
-                ds.setUnderlineText(false);                    // 去掉下划线
+                // 设置颜色
+                ds.setColor(getColor(context, R.color.secondary_text_color));
+                // 去掉下划线
+                ds.setUnderlineText(false);
             }
         };
         string.setSpan(contentColor, 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -593,18 +627,47 @@ public class ViewUtils {
         return gradientDrawable;
     }
 
-    public static int primaryTextColor() {
-        return Color.parseColor("#212121");
+    //************************************** Adapter *****************************************//
+
+    public static class TabAdapter extends FragmentPagerAdapter {
+
+        private String[] titles;
+        private Fragment[] fragments;
+
+        public TabAdapter(@NonNull FragmentManager fm, String[] titles, Fragment[] fragments) {
+            super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
+            this.titles = titles;
+            this.fragments = fragments;
+        }
+
+        @NonNull
+        @Override
+        public Fragment getItem(int position) {
+            return fragments[position];
+        }
+
+        @Override
+        public int getCount() {
+            return titles.length;
+        }
+
+        @Nullable
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return titles[position];
+        }
     }
 
-    public static int secondaryTextColor() {
-        return Color.parseColor("#757575");
-    }
+    //************************************** Utils *******************************************//
 
-    //************************************** Size ********************************************//
+    public static int getColor(Context context, @ColorRes int id) {
+        return context.getResources().getColor(id);
+    }
 
     public static int dp2px(float value) {
-        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, Resources.getSystem().getDisplayMetrics());
+        return (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, value, Resources.getSystem().getDisplayMetrics()
+        );
     }
 
     /**
@@ -613,5 +676,4 @@ public class ViewUtils {
     public static int getWidth() {
         return Resources.getSystem().getDisplayMetrics().widthPixels;
     }
-
 }

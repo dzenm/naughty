@@ -10,6 +10,8 @@ import androidx.annotation.NonNull;
 import androidx.core.widget.NestedScrollView;
 
 import com.dzenm.naughty.base.BaseFragment;
+import com.dzenm.naughty.http.HttpBean;
+import com.dzenm.naughty.ui.MainModelActivity;
 import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
 
@@ -18,23 +20,18 @@ import java.util.Map;
 
 /**
  * @author dzenm
+ * <p>
+ * 显示单个Http请求
  */
-public class TabFragment extends BaseFragment {
+public class TabFragment extends BaseFragment<MainModelActivity> {
 
-    private static final String BUNDLE_DATA = "BUNDLE_DATA";
-    private static final String BUNDLE_FLAG = "BUNDLE_FLAG";
     static final int BUNDLE_REQUEST = 1;
     static final int BUNDLE_RESPONSE = 2;
 
     /**
      * 保存的需要显示的数据
      */
-    private Map<String, String> data;
-
-    /**
-     * 根布局
-     */
-    private LinearLayout mParent;
+    private Map<String, String> data = new HashMap<>();
 
     /**
      * Use this factory method to create a new instance of
@@ -42,7 +39,7 @@ public class TabFragment extends BaseFragment {
      *
      * @return A new instance of fragment RequestFragment.
      */
-    static TabFragment newInstance(HttpBean bean, int which) {
+    public static TabFragment newInstance(HttpBean bean, int which) {
         TabFragment fragment = new TabFragment();
         Bundle args = new Bundle();
         args.putParcelable(BUNDLE_DATA, bean);
@@ -56,45 +53,48 @@ public class TabFragment extends BaseFragment {
         super.onCreate(savedInstanceState);
         Bundle bundle = getArguments();
         if (bundle != null) {
-            int which = bundle.getInt(BUNDLE_FLAG);
             HttpBean bean = bundle.getParcelable(BUNDLE_DATA);
             if (bean != null) {
+                int which = bundle.getInt(BUNDLE_FLAG);
                 if (which == BUNDLE_REQUEST) {
                     data = bean.getRequest();
                 } else if (which == BUNDLE_RESPONSE) {
                     data = bean.getResponse();
-                } else {
-                    data = new HashMap<>();
                 }
             }
         }
     }
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater i, ViewGroup c) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container) {
+        // 根布局
         NestedScrollView scrollView = ViewUtils.newScrollView(mActivity);
-        mParent = ViewUtils.newDecorView(mActivity);
-        addView();
-        scrollView.addView(mParent);
-        return scrollView;
-    }
+        LinearLayout parent = ViewUtils.newDecorView(mActivity);
 
-    private void addView() {
+        parent.addView(ViewUtils.newSubtitle(mActivity, 8, 8, "Headers"));
         for (Map.Entry<String, String> map : data.entrySet()) {
             String key = map.getKey();
             String value = map.getValue();
-            boolean isBody = key.contains("Body");
+            boolean isBody = key.equals("Response Body") || key.equals("Request Body");
 
+            if (isBody) continue;
             LinearLayout titleLayout = ViewUtils.newTitleLayout(mActivity);
             titleLayout.addView(ViewUtils.newTitleView(mActivity, key));
-            if (!isBody) {
-                titleLayout.addView(ViewUtils.newContentView(mActivity, value));
-            }
-            mParent.addView(titleLayout);
-            if (isBody) {
-                mParent.addView(ViewUtils.newBodyView(mActivity, Utils.formatJson(value, false)));
+            titleLayout.addView(ViewUtils.newContentView(mActivity, value));
+            parent.addView(titleLayout);
+        }
+
+        parent.addView(ViewUtils.newSubtitle(mActivity, 16, 8, "Body"));
+        Bundle bundle = getArguments();
+        if (bundle != null) {
+            int which = bundle.getInt(BUNDLE_FLAG);
+            String value = which != BUNDLE_REQUEST ? data.get("Response Body") : data.get("Request Body");
+            if (value != null) {
+                parent.addView(ViewUtils.newBodyView(mActivity, Utils.formatJson(value)));
             }
         }
-    }
 
+        scrollView.addView(parent);
+        return scrollView;
+    }
 }

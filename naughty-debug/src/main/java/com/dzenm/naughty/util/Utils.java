@@ -1,11 +1,14 @@
 package com.dzenm.naughty.util;
 
+import android.annotation.SuppressLint;
 import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Build;
 import android.provider.Settings;
 import android.text.TextUtils;
+import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -22,6 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,7 +78,7 @@ public class Utils {
         // 获取剪切板管理器
         ClipboardManager clipboardManager = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
         // 创建普通字符clipData
-        ClipData clipData = ClipData.newPlainText("text/plain", text);
+        ClipData clipData = ClipData.newPlainText(ClipDescription.MIMETYPE_TEXT_PLAIN, text);
         if (clipboardManager != null) {
             clipboardManager.setPrimaryClip(clipData);
         }
@@ -83,17 +87,15 @@ public class Utils {
     /**
      * 格式化Json字符串展示
      *
-     * @param json      需要格式化的字符串
-     * @param isRetouch 是否添加四周装饰的字符
+     * @param json 需要格式化的字符串
      * @return 格式化好的字符串
      */
-    public static String formatJson(String json, boolean isRetouch) {
-        StringBuilder sb = new StringBuilder();
+    public static String formatJson(String json) {
         String message;
         // 格式化json字符串
         try {
+            // 最重要的方法，就一行，返回格式化的json字符串，其中的数字4是缩进字符数
             if (json.startsWith("{")) {
-                // 最重要的方法，就一行，返回格式化的json字符串，其中的数字4是缩进字符数
                 message = new JSONObject(json).toString(4);
             } else if (json.startsWith("[")) {
                 message = new JSONArray(json).toString(4);
@@ -105,50 +107,35 @@ public class Utils {
         }
 
         // 添加换行并输出字符串
-        if (isRetouch) sb.append("╔═════════════");
         String[] lines = message.split("\n");
+        StringBuilder sb = new StringBuilder();
         for (String line : lines) {
             line = line.replace("\\", "");
-            if (isRetouch) {
-                sb.append("\n║").append(line);
-            } else {
-                sb.append(line).append("\n");
-            }
+            sb.append(line).append("\n");
         }
-        if (isRetouch) sb.append("\n╚═════════════");
         return sb.toString();
     }
 
     /**
-     * 根据文件大小格式化为KB, MB, GB
+     * 根据文件大小格式化为B, KB, MB, GB
      *
      * @param size 文件大小
      * @return 格式化后的文件大小
      */
     public static String formatFileSize(long size) {
-        // 如果字节数少于1024，则直接以B为单位，否则先除于1024，后3位因太少无意义
-        if (size < 1024) {
-            return size + " B";
-        } else {
-            size = size / 1024;
+        String[] suffixes = new String[]{" B", " KB", " MB", " GB", " TB", "PB"};
+        int index = 0;
+        // 因为要保存小数点，所以需大于102400以便用于后面进行小数分解的运算，index是判断以哪一个单位结尾
+        while (size >= 102400) {
+            size /= 1024;
+            index++;
         }
-        // 如果原字节数除于1024之后，少于1024，则可以直接以KB作为单位
-        // 因为还没有到达要使用另一个单位的时候，接下去以此类推
-        if (size < 1024) {
-            return size + " KB";
-        } else {
-            size = size / 1024;
-        }
-        if (size < 1024) {
-            // 因为如果以MB为单位的话，要保留最后1位小数，
-            // 因此，把此数乘以100之后再取余
-            size = size * 100;
-            return (size / 100) + "." + (size % 100) + " MB";
-        } else {
-            // 否则如果要以GB为单位的，先除于1024再作同样的处理
-            size = size * 100 / 1024;
-            return (size / 100) + "." + (size % 100) + " GB";
-        }
+
+        long integer = size / 100;
+        long decimal = size % 100;
+        boolean isNeedDecimal = integer == 0 && decimal == 0;
+
+        return integer + (isNeedDecimal ? "" : "." + decimal) + suffixes[index];
     }
 
     /**
@@ -202,7 +189,10 @@ public class Utils {
                     fileList.add(f);
                 }
             } else if (f.isDirectory()) {
-                fileList.addAll(getFiles(f.getAbsolutePath(), filterType));
+                List<File> childFiles = getFiles(f.getAbsolutePath(), filterType);
+                if (childFiles != null) {
+                    fileList.addAll(childFiles);
+                }
             }
         }
         return fileList;
@@ -219,5 +209,10 @@ public class Utils {
             return Settings.canDrawOverlays(context);
         }
         return true;
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    public static String format(String date) {
+        return new SimpleDateFormat("HH:mm:ss SSS").format(Long.valueOf(date));
     }
 }

@@ -15,12 +15,15 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.base.BaseFragment;
-import com.dzenm.naughty.util.Utils;
+import com.dzenm.naughty.http.HttpBean;
+import com.dzenm.naughty.ui.MainModelActivity;
 import com.dzenm.naughty.util.ViewUtils;
 
-public class ItemFragment extends BaseFragment {
+/**
+ * 显示单个Http请求详细数据页面
+ */
+public class ItemFragment extends BaseFragment<MainModelActivity> {
 
-    private static final String BUNDLE_DATA = "BUNDLE_DATA";
     private HttpBean data;
 
     /**
@@ -49,11 +52,7 @@ public class ItemFragment extends BaseFragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup c) {
-        return createView(inflater);
-    }
-
-    private View createView(LayoutInflater inflater) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container) {
         // 创建根布局
         LinearLayout parent = new LinearLayout(mActivity);
         parent.setLayoutParams(new LinearLayout.LayoutParams(
@@ -86,7 +85,10 @@ public class ItemFragment extends BaseFragment {
         parent.addView(tabLayout);
         parent.addView(viewPager);
 
-        final String[] titles = new String[]{"RESPONSE", "REQUEST"};
+        final String[] titles = new String[]{
+                mActivity.getString(R.string.tab_response_title),
+                mActivity.getString(R.string.tab_request_title)
+        };
         TabFragment[] fragments = new TabFragment[]{
                 TabFragment.newInstance(data, TabFragment.BUNDLE_RESPONSE),
                 TabFragment.newInstance(data, TabFragment.BUNDLE_REQUEST)
@@ -94,5 +96,4 @@ public class ItemFragment extends BaseFragment {
         ViewUtils.initTab(mActivity, getChildFragmentManager(), viewPager, tabLayout, titles, fragments);
         return parent;
     }
-
 }

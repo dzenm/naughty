@@ -1,10 +1,10 @@
 package com.dzenm.naughty.http;
 
-import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -19,15 +19,11 @@ import androidx.core.app.NotificationManagerCompat;
 import com.dzenm.core.BaseInterceptor;
 import com.dzenm.naughty.Naughty;
 import com.dzenm.naughty.R;
-import com.dzenm.naughty.service.NaughtyBroadcast;
-import com.dzenm.naughty.ui.http.HttpBean;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +43,8 @@ import okio.BufferedSource;
 /**
  * @author dzenm
  * 2020/8/4
+ * <p>
+ * Http请求拦截器，将请求的数据保存，使用通知显示请求的内容
  */
 public class HttpInterceptor extends BaseInterceptor {
 
@@ -55,7 +53,6 @@ public class HttpInterceptor extends BaseInterceptor {
 
     private Naughty mNaughty;
     private Context mContext;
-
     private final AtomicInteger mNextRequestId = new AtomicInteger(0);
 
     public HttpInterceptor(Context context) {
@@ -69,139 +66,123 @@ public class HttpInterceptor extends BaseInterceptor {
             mNaughty = Naughty.getInstance();
         }
         Request request = chain.request();
-        if (mNaughty.isDebug()) {
-            Log.d(TAG, "request hashCode: " + request.hashCode());
+        if (!mNaughty.isDebug()) {
+            return chain.proceed(request);
+        }
+        Log.d(TAG, "request hashCode: " + request.hashCode());
 
-            // 保存请求及返回的数据
-            HttpBean bean = new HttpBean();
-            mNaughty.add(bean);
+        // 保存请求及返回的数据
+        HttpBean bean = new HttpBean();
+        mNaughty.add(bean);
 
-            // 请求的ID
-            bean.setId(mNextRequestId.getAndIncrement());
+        // 请求的ID
+        bean.setId(mNextRequestId.getAndIncrement());
 
-            // 请求开始的时间及状态
-            bean.setCurrentTime(getCurrentTime());
-            bean.setLoadingState(Naughty.START);
-            setRequestState(bean);
+        // 请求开始的时间及状态
+        bean.setCurrentTime(String.valueOf(System.currentTimeMillis()));
+        bean.setLoadingState(Naughty.START);
+        setRequestState(bean);
 
-            // 请求内容
-            RequestBody requestBody = request.body();
-            boolean hasRequestBody = requestBody != null;
+        // 请求内容
+        RequestBody requestBody = request.body();
+        boolean hasRequestBody = requestBody != null;
 
-            // 请求协议类型
-            Connection connection = chain.connection();
-            Protocol protocol = connection != null ? connection.protocol() : Protocol.HTTP_1_1;
+        // 请求协议类型
+        Connection connection = chain.connection();
+        Protocol protocol = connection != null ? connection.protocol() : Protocol.HTTP_1_1;
 
-            // 保存请求的数据
-            bean.setProtocol(protocol.toString());
-            bean.setRequestUrl(request.url().toString());
-            bean.setMethod(request.method());
+        // 保存请求的数据
+        bean.setProtocol(protocol.toString());
+        bean.setRequestUrl(request.url().toString());
+        bean.setMethod(request.method());
 
-            Map<String, String> requestHeader = new LinkedHashMap<>();
-            Headers requestHeaders = request.headers();
-            // 请求头
-            for (int i = 0, count = requestHeaders.size(); i < count; i++) {
-                requestHeader.put(requestHeaders.name(i), requestHeaders.value(i));
+        // 请求头
+        Map<String, String> requestHeader = new LinkedHashMap<>();
+        Headers requestHeaders = request.headers();
+        for (int i = 0, count = requestHeaders.size(); i < count; i++) {
+            requestHeader.put(requestHeaders.name(i), requestHeaders.value(i));
+        }
+        bean.setRequestHeaders(requestHeader);
+        // 请求体
+        if (hasRequestBody && !bodyEncoded(request.headers())) {
+            Buffer buffer = new Buffer();
+            requestBody.writeTo(buffer);
+
+            Charset charset = UTF8;
+            MediaType contentType = requestBody.contentType();
+            if (contentType != null) {
+                charset = contentType.charset(UTF8);
             }
-            bean.setRequestHeaders(requestHeader);
-            // 请求体
-            if (hasRequestBody && !bodyEncoded(request.headers())) {
-                Buffer buffer = new Buffer();
-                requestBody.writeTo(buffer);
-
-                Charset charset = UTF8;
-                MediaType contentType = requestBody.contentType();
-                if (contentType != null) {
-                    charset = contentType.charset(UTF8);
-                }
-                bean.setRequestSize(String.valueOf(buffer.size()));
-                if (isPlaintext(buffer) && charset != null) {
-                    bean.setRequestBody(buffer.readString(charset));
-                } else {
-                    bean.setRequestBody("binary: " + buffer.size() + "-byte body omitted)");
-                }
+            bean.setRequestSize(String.valueOf(buffer.size()));
+            if (isPlaintext(buffer) && charset != null) {
+                bean.setRequestBody(buffer.readString(charset));
             } else {
-                bean.setRequestBody("");
+                bean.setRequestBody("binary: " + buffer.size() + "-byte body omitted)");
             }
+        }
 
-            // 等待响应
-            bean.setLoadingState(Naughty.RUNNING);
-            setRequestState(bean);
+        // 等待响应
+        bean.setLoadingState(Naughty.RUNNING);
+        setRequestState(bean);
 
-            Response response;
-            long tookMs;
-            long startNs = System.nanoTime();
-            try {
-                response = chain.proceed(request);
-            } catch (Exception e) {
-                tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
-                bean.setStatus("");
-                bean.setMessage("");
-                bean.setTime(String.valueOf(tookMs));
-                bean.setFromDiskCache(false);
-                bean.setConnectionId(connection == null ? 0 : connection.hashCode());
-
-                bean.setResponseSize("");
-                bean.setResponseBody(e.getMessage());
-
-                bean.setLoadingState(Naughty.STOP);
-                setRequestState(bean);
-                throw e;
-            }
-
+        Response response;
+        long tookMs;
+        long startNs = System.nanoTime();
+        try {
+            response = chain.proceed(request);
+        } catch (Exception e) {
             tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
-
-            // 保存返回的数据
-            bean.setStatus(String.valueOf(response.code()));
-            bean.setMessage(response.message());
-            bean.setMessage(response.request().url().toString());
             bean.setTime(String.valueOf(tookMs));
-            bean.setResponseUrl(response.request().url().toString());
-            bean.setFromDiskCache(response.cacheResponse() != null);
-            bean.setConnectionId(connection == null ? 0 : connection.hashCode());
-
-            Map<String, String> responseHeader = new LinkedHashMap();
-            Headers responseHeaders = response.headers();
-            for (int i = 0, count = responseHeaders.size(); i < count; i++) {
-                responseHeader.put(responseHeaders.name(i), responseHeaders.value(i));
-            }
-            bean.setResponseHeaders(responseHeader);
-
-            ResponseBody responseBody = response.body();
-            if (responseBody != null) {
-                // 返回的请求体内容
-                BufferedSource source = responseBody.source();
-                source.request(Long.MAX_VALUE);     // Buffer the entire body.
-                Buffer buffer = source.getBuffer();
-
-                Charset charset = UTF8;
-                MediaType contentType = responseBody.contentType();
-                if (contentType != null) {
-                    charset = contentType.charset(UTF8);
-                }
-
-                bean.setResponseSize(String.valueOf(buffer.size()));
-                if (!isPlaintext(buffer)) {
-                    bean.setResponseBody("binary: " + buffer.size() + "-byte body omitted)");
-                    return response;
-                }
-                if (charset != null) {
-                    bean.setResponseBody(buffer.clone().readString(charset));
-                }
-            } else {
-                bean.setResponseBody("");
-            }
-
+            bean.setResponseBody(e.getMessage());
             bean.setLoadingState(Naughty.STOP);
             setRequestState(bean);
-            return response;
+            throw e;
         }
-        return chain.proceed(request);
-    }
 
-    @SuppressLint("SimpleDateFormat")
-    private String getCurrentTime() {
-        return new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
+        tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
+
+        // 保存返回的数据
+        bean.setStatus(String.valueOf(response.code()));
+        bean.setMessage(response.message());
+        bean.setMessage(response.request().url().toString());
+        bean.setTime(String.valueOf(tookMs));
+        bean.setResponseUrl(response.request().url().toString());
+        bean.setFromDiskCache(response.cacheResponse() != null);
+        bean.setConnectionId(connection == null ? 0 : connection.hashCode());
+
+        Map<String, String> responseHeader = new LinkedHashMap();
+        Headers responseHeaders = response.headers();
+        for (int i = 0, count = responseHeaders.size(); i < count; i++) {
+            responseHeader.put(responseHeaders.name(i), responseHeaders.value(i));
+        }
+        bean.setResponseHeaders(responseHeader);
+
+        ResponseBody responseBody = response.body();
+        if (responseBody != null) {
+            // 返回的请求体内容
+            BufferedSource source = responseBody.source();
+            source.request(Long.MAX_VALUE);     // Buffer the entire body.
+            Buffer buffer = source.getBuffer();
+
+            Charset charset = UTF8;
+            MediaType contentType = responseBody.contentType();
+            if (contentType != null) {
+                charset = contentType.charset(UTF8);
+            }
+
+            bean.setResponseSize(String.valueOf(buffer.size()));
+            if (!isPlaintext(buffer)) {
+                bean.setResponseBody("binary: " + buffer.size() + "-byte body omitted)");
+                return response;
+            }
+            if (charset != null) {
+                bean.setResponseBody(buffer.clone().readString(charset));
+            }
+        }
+
+        bean.setLoadingState(Naughty.STOP);
+        setRequestState(bean);
+        return response;
     }
 
     /**
@@ -288,6 +269,28 @@ public class HttpInterceptor extends BaseInterceptor {
                 .setWhen(System.currentTimeMillis())        // 设置时间
                 .build();
         manager.notify(id, notification);
+    }
+
+    /**
+     * 记得在AndroidManifest添加广播
+     * <service android:name="com.sd.fireelevs.core.floating.service.FloatingBroadcast" />
+     */
+    public static class NaughtyBroadcast extends BroadcastReceiver {
+
+        /**
+         * 为了Notification更新信息
+         */
+        public static final String ACTION_NOTIFICATION = "action_notification";
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action != null) {
+                if (action.equals(ACTION_NOTIFICATION)) {
+                    Naughty.getInstance().startActivity(context);
+                }
+            }
+        }
     }
 
     /**

@@ -16,9 +16,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.dzenm.core.BaseNaughty;
 import com.dzenm.log.LogHelper;
 import com.dzenm.naughty.http.HttpInterceptor;
-import com.dzenm.naughty.service.NaughtyService;
 import com.dzenm.naughty.ui.MainModelActivity;
-import com.dzenm.naughty.ui.http.HttpBean;
+import com.dzenm.naughty.http.HttpBean;
 import com.dzenm.naughty.ui.log.LogItemAdapter;
 import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
@@ -57,7 +56,7 @@ public class Naughty extends BaseNaughty {
     /**
      * Service是否已经创建
      */
-    public static boolean isCreated = false;
+    public boolean isCreated = false;
 
     /**
      * 悬浮窗配置参数
@@ -221,6 +220,7 @@ public class Naughty extends BaseNaughty {
     @SuppressLint("ClickableViewAccessibility")
     public void onCreate(final NaughtyService service) {
         this.mService = service;
+        isCreated = true;
 
         if (Utils.checkOverlaysPermission(service)) {
             mWindowManager = (WindowManager) service.getSystemService(Context.WINDOW_SERVICE);
@@ -284,6 +284,7 @@ public class Naughty extends BaseNaughty {
     }
 
     public void onDestroy() {
+        isCreated = false;
         mService = null;
         isShowing = false;
         mWindowManager = null;
