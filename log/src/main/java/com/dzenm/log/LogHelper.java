@@ -32,7 +32,7 @@ public class LogHelper {
     public static final int LEVEL_WARN = 5;
     public static final int LEVEL_ERROR = 6;
 
-    private static final String TAG = LogHelper.class.getSimpleName() + " | ";
+    private static final String TAG = LogHelper.class.getSimpleName();
 
     private static volatile LogHelper sInstance = null;
 

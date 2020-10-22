@@ -1,16 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.3"
-
+    compileSdkVersion Ext.compileSdkVersion
+    buildToolsVersion Ext.buildToolsVersion
     defaultConfig {
         applicationId "com.example"
-        minSdkVersion 21
-        targetSdkVersion 29
-        versionCode 1
-        versionName "1.0"
-
+        minSdkVersion Ext.minSdkVersion
+        targetSdkVersion Ext.targetSdkVersion
+        versionCode Ext.versionCode
+        versionName Ext.versionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -32,18 +30,17 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
+    implementation Ext.AppCompact
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.2'
     testImplementation 'junit:junit:4.13'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'androidx.recyclerview:recyclerview:1.1.0'
-    implementation 'com.squareup.okhttp3:okhttp:3.14.0'
+    implementation Ext.RecyclerView
+    implementation Ext.OkHttp
     debugImplementation project(":naughty-debug")
     releaseImplementation project(":naughty-release")
-//    releaseImplementation 'com.github.dzenm.naughty:naughty-release:1.5.2'
-//    debugImplementation 'com.github.dzenm.naughty:naughty-debug:1.5.2'
+//    releaseImplementation 'com.github.dzenm.naughty:naughty-release:1.5.3'
+//    debugImplementation 'com.github.dzenm.naughty:naughty-debug:1.5.3'
 
 }

@@ -252,14 +252,16 @@ public class Naughty extends BaseNaughty {
                 LogHelper.getInstance().start(new LogHelper.OnChangeListener() {
                     @Override
                     public void onChanged(String log) {
-                        mDecorView.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                adapter.notifyDataSetChanged();
-                                int size = adapter.getItemCount();
-                                recyclerView.smoothScrollToPosition(size);
-                            }
-                        });
+                        if (mDecorView != null) {
+                            mDecorView.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    adapter.notifyDataSetChanged();
+                                    int size = adapter.getItemCount();
+                                    recyclerView.smoothScrollToPosition(size);
+                                }
+                            });
+                        }
                     }
                 });
                 adapter.setData(LogHelper.getInstance().getData());

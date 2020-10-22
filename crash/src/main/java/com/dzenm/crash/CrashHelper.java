@@ -33,7 +33,7 @@ import java.util.Date;
  */
 public class CrashHelper implements Thread.UncaughtExceptionHandler {
 
-    private static final String TAG = CrashHelper.class.getSimpleName() + "| ";
+    private static final String TAG = CrashHelper.class.getSimpleName();
 
     private static final String FILE_NAME = "crash";
 
@@ -240,9 +240,14 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
             // log文件夹
             File parent = new File(mFilePath);
             // 保存文件
-            createFile(parent, fileName, errorMessage);
-            // 删除其它文件
-            delete(parent, fileName);
+            if (createFile(parent, fileName, errorMessage)) {
+                // 删除其它文件
+                if (delete(parent, fileName)) {
+                    Log.d(TAG, "异常日志文件: " + parent + File.separator + fileName);
+                }
+            } else {
+                Log.d(TAG, "创建异常日志文件失败");
+            }
         }
     }
 
