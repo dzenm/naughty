@@ -74,7 +74,7 @@ public class MainModelActivity extends AppCompatActivity {
 
     @Override
     public void finish() {
-        back(false);
+        onBackKeyboard(false);
     }
 
     /**
@@ -105,8 +105,13 @@ public class MainModelActivity extends AppCompatActivity {
         return frameLayout;
     }
 
-    public void back(boolean isFinished) {
-        if (isFinished) {
+    /**
+     * 返回到上一个 Activity 或 Fragment
+     *
+     * @param isFinishedCurrentActivity 是否结束当前 Activity
+     */
+    public void onBackKeyboard(boolean isFinishedCurrentActivity) {
+        if (isFinishedCurrentActivity) {
             Naughty.getInstance().clear();
             super.finish();
         } else {

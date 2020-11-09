@@ -52,7 +52,7 @@ public class HttpInterceptor extends BaseInterceptor {
     private static final Charset UTF8 = StandardCharsets.UTF_8;
 
     private Naughty mNaughty;
-    private Context mContext;
+    private final Context mContext;
     private final AtomicInteger mNextRequestId = new AtomicInteger(0);
 
     public HttpInterceptor(Context context) {
@@ -287,7 +287,7 @@ public class HttpInterceptor extends BaseInterceptor {
             String action = intent.getAction();
             if (action != null) {
                 if (action.equals(ACTION_NOTIFICATION)) {
-                    Naughty.getInstance().startActivity(context);
+                    Naughty.startActivity(context);
                 }
             }
         }

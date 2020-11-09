@@ -14,7 +14,7 @@ import androidx.fragment.app.Fragment;
  * @author dzenm
  * 2020/8/4
  */
-public class BaseFragment<T extends AppCompatActivity> extends Fragment {
+public abstract class BaseFragment<T extends AppCompatActivity> extends Fragment {
 
     protected static final String BUNDLE_DATA = "bundle_data";
     protected static final String BUNDLE_FLAG = "bundle_flag";

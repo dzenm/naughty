@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         SharedPreferences sp = getSharedPreferences("test_login", Context.MODE_PRIVATE);
-        @SuppressLint("CommitPrefEdits") SharedPreferences.Editor editor = sp.edit();
+        SharedPreferences.Editor editor = sp.edit();
         editor.putBoolean("hello", true);
         editor.putString("this is test", "test");
         editor.apply();
@@ -39,19 +39,18 @@ public class MainActivity extends AppCompatActivity {
         textView = findViewById(R.id.text);
 
         textView.setOnClickListener(v -> provideOkHttpClient());
+
+        provideOkHttpClient();
     }
 
     /**
      * 创建自定义Ok http Client[createRetrofit]
      */
     private void provideOkHttpClient() {
-        OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        if (BuildConfig.DEBUG) {
-            builder.addInterceptor(Naughty.getInstance().get(this));
-        }
-        OkHttpClient client = builder.build();
+        OkHttpClient client = new OkHttpClient.Builder()
+                .addInterceptor(Naughty.getInstance().get(this))
+                .build();
 
-//        String url = "https://wwww.baidu.com";
         String url = "https://www.wanandroid.com/article/list/0/json";
         final Request request = new Request.Builder()
                 .url(url)
@@ -76,12 +75,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateText(String text) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                textView.setText(text);
-
-            }
-        });
+        runOnUiThread(() -> textView.setText(text));
     }
 }

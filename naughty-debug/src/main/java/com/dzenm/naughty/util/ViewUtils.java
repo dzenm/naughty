@@ -79,7 +79,7 @@ public class ViewUtils {
         parent.setLayoutParams(new FrameLayout.LayoutParams(width, height));
         parent.setOrientation(LinearLayout.VERTICAL);
 
-        int padding = dp2px(4);
+        int padding = dp2px(Dimens.PADDING_4);
 
         // 标题栏
         LinearLayout titleLayout = new LinearLayout(context);
@@ -169,7 +169,7 @@ public class ViewUtils {
         item.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT
         ));
-        int padding = dp2px(4);
+        int padding = dp2px(Dimens.PADDING_4);
         item.setPadding(padding, 0, padding, padding);
         item.setTextSize(12f);
 
@@ -188,7 +188,7 @@ public class ViewUtils {
         contentLayout.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ));
-        int padding = dp2px(16);
+        int padding = dp2px(Dimens.PADDING_16);
         contentLayout.setOrientation(LinearLayout.HORIZONTAL);
         contentLayout.setPadding(padding, 0, padding, 0);
 
@@ -375,7 +375,7 @@ public class ViewUtils {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT
         );
-        int padding = dp2px(16);
+        int padding = dp2px(Dimens.PADDING_16);
         parent.setPadding(padding, padding, padding, padding);
         parent.setOrientation(LinearLayout.VERTICAL);
         parent.setLayoutParams(params);
@@ -385,36 +385,28 @@ public class ViewUtils {
 
     //************************************** Content View ****************************************//
 
-    public static LinearLayout newSubtitle(Context context, int topMargin, int bottomMargin, String subtitle) {
-        LinearLayout parent = new LinearLayout(context);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        params.topMargin = dp2px(topMargin);
-        params.bottomMargin = dp2px(bottomMargin);
-        parent.setLayoutParams(params);
-        parent.setOrientation(LinearLayout.VERTICAL);
-
+    public static TextView newSubtitle(Context context, int padding, String subtitle) {
         TextView tvSubtitle = new TextView(context);
-        LinearLayout.LayoutParams subTitleParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        subTitleParams.bottomMargin = dp2px(bottomMargin);
+        tvSubtitle.setPadding(dp2px(padding), dp2px(padding), dp2px(padding), dp2px(padding));
+        tvSubtitle.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT
+        ));
         tvSubtitle.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
         tvSubtitle.setTextColor(getColor(context, R.color.subtitle_text_color));
-        tvSubtitle.setLayoutParams(subTitleParams);
         tvSubtitle.setTextSize(18f);
         tvSubtitle.setText(subtitle);
+        return tvSubtitle;
+    }
 
+    public static View newDivide(Context context, @ColorRes int color) {
         View divide = new View(context);
-        divide.setLayoutParams(new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp2px(1)
-        ));
-        divide.setBackgroundColor(getColor(context, R.color.divide_color));
-
-        parent.addView(tvSubtitle);
-        parent.addView(divide);
-        return parent;
+        );
+        params.bottomMargin = dp2px(Dimens.MARGIN_8);
+        divide.setLayoutParams(params);
+        divide.setBackgroundColor(getColor(context, color));
+        return divide;
     }
 
     public static LinearLayout newTitleLayout(Context context) {
@@ -422,7 +414,7 @@ public class ViewUtils {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        params.bottomMargin = dp2px(8);
+        parent.setPadding(Dimens.PADDING_8, Dimens.PADDING_8, Dimens.PADDING_8, Dimens.PADDING_8);
         parent.setLayoutParams(params);
         parent.setOrientation(LinearLayout.HORIZONTAL);
         return parent;
@@ -557,7 +549,7 @@ public class ViewUtils {
         tab.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, dp2px(50))
         );
-        tab.setPadding(dp2px(24), 0, dp2px(24), 0);
+        tab.setPadding(dp2px(Dimens.PADDING_24), 0, dp2px(Dimens.PADDING_24), 0);
         tab.setGravity(Gravity.CENTER);
         tab.setTextSize(18);
         tab.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
@@ -610,7 +602,7 @@ public class ViewUtils {
                 dp2px(radius), dp2px(radius), dp2px(radius), dp2px(radius)};
         normalDrawable.setCornerRadii(radiusIIII);
 
-        normalDrawable.setStroke(dp2px(1), resolveColor(context, R.attr.colorButtonNormal));
+        normalDrawable.setStroke(dp2px(Dimens.STROKE_1), resolveColor(context, R.attr.colorButtonNormal));
 
         return new RippleDrawable(
                 ColorStateList.valueOf(resolveColor(context, R.attr.colorButtonNormal)),

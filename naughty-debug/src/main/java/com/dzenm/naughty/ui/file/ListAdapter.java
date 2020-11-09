@@ -7,12 +7,13 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.base.BaseAdapter;
+import com.dzenm.naughty.shared_preferences.SharedPreferencesHelper;
+import com.dzenm.naughty.util.Dimens;
 import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
 
@@ -31,8 +32,8 @@ class ListAdapter extends BaseAdapter<File> {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        int margin = ViewUtils.dp2px(8);
-        int padding = ViewUtils.dp2px(16);
+        int margin = ViewUtils.dp2px(Dimens.MARGIN_8);
+        int padding = ViewUtils.dp2px(Dimens.MARGIN_16);
         params.bottomMargin = params.topMargin = params.leftMargin = params.rightMargin = margin;
         parent.setOrientation(LinearLayout.VERTICAL);
         parent.setLayoutParams(params);
@@ -84,7 +85,8 @@ class ListAdapter extends BaseAdapter<File> {
     }
 
     @Override
-    protected void onBindData(@NonNull ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        super.onBindViewHolder(holder, position);
         final File bean = data.get(position);
 
         holder.getTextView(0).setText(bean.getName());
@@ -95,16 +97,16 @@ class ListAdapter extends BaseAdapter<File> {
         @SuppressLint("SimpleDateFormat") SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         ((TextView) paramLayout.getChildAt(1)).setText(format.format(bean.lastModified()));
 
-        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                Utils.copy(context, bean.getAbsolutePath());
-                Toast.makeText(context, context.getString(R.string.toast_copy_text), Toast.LENGTH_SHORT).show();
-                return false;
-            }
-        });
-
-        float radius = 4f;
+        float radius = Dimens.RADIUS_4F;
         holder.itemView.setBackground(ViewUtils.getRippleDrawable(context, radius));
+    }
+
+    @Override
+    protected void deleteBefore(File bean) {
+        String name = bean.getName();
+        int index = name.lastIndexOf(".");
+        SharedPreferencesHelper.clear(context, name.substring(0, index));
+
+        bean.deleteOnExit();
     }
 }

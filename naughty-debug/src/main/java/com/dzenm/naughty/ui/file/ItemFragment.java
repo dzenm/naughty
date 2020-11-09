@@ -44,7 +44,7 @@ public class ItemFragment extends BaseFragment<MainModelActivity> {
         Bundle bundle = getArguments();
         if (bundle != null) {
             mFileData = bundle.getString(BUNDLE_DATA);
-            data = SharedPreferencesHelper.getInstance().getSharedPreferenceValue(new File(mFileData));
+            data = SharedPreferencesHelper.getSharedPreferenceValue(mActivity, new File(mFileData));
         }
     }
 

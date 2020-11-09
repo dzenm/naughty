@@ -20,7 +20,8 @@ public class LogItemAdapter extends BaseAdapter<String> {
     }
 
     @Override
-    protected void onBindData(@NonNull ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        super.onBindViewHolder(holder, position);
         final String log = data.get(position);
         holder.getTextView(0).setText(Html.fromHtml(LogHelper.getInstance().format(log)));
         holder.itemView.setOnClickListener(new View.OnClickListener() {

@@ -9,9 +9,11 @@ import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.core.widget.NestedScrollView;
 
+import com.dzenm.naughty.R;
 import com.dzenm.naughty.base.BaseFragment;
 import com.dzenm.naughty.http.HttpBean;
 import com.dzenm.naughty.ui.MainModelActivity;
+import com.dzenm.naughty.util.Dimens;
 import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
 
@@ -71,7 +73,8 @@ public class TabFragment extends BaseFragment<MainModelActivity> {
         NestedScrollView scrollView = ViewUtils.newScrollView(mActivity);
         LinearLayout parent = ViewUtils.newDecorView(mActivity);
 
-        parent.addView(ViewUtils.newSubtitle(mActivity, 8, 8, "Headers"));
+        parent.addView(ViewUtils.newSubtitle(mActivity, Dimens.PADDING_8, "Headers"));
+        parent.addView(ViewUtils.newDivide(mActivity, R.color.divide_color));
         for (Map.Entry<String, String> map : data.entrySet()) {
             String key = map.getKey();
             String value = map.getValue();
@@ -84,7 +87,8 @@ public class TabFragment extends BaseFragment<MainModelActivity> {
             parent.addView(titleLayout);
         }
 
-        parent.addView(ViewUtils.newSubtitle(mActivity, 16, 8, "Body"));
+        parent.addView(ViewUtils.newSubtitle(mActivity, Dimens.PADDING_8, "Body"));
+        parent.addView(ViewUtils.newDivide(mActivity, R.color.divide_color));
         Bundle bundle = getArguments();
         if (bundle != null) {
             int which = bundle.getInt(BUNDLE_FLAG);

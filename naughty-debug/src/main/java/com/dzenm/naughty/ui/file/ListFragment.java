@@ -22,7 +22,8 @@ import java.io.File;
  * <p>
  * 显示 SharedPreference 文件列表页面
  */
-public class ListFragment extends BaseFragment<MainModelActivity> implements ListAdapter.OnItemClickListener<File> {
+public class ListFragment extends BaseFragment<MainModelActivity> implements
+        ListAdapter.OnItemClickListener<File> {
 
     public static ListFragment newInstance() {
         return new ListFragment();
@@ -33,7 +34,7 @@ public class ListFragment extends BaseFragment<MainModelActivity> implements Lis
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container) {
         ListAdapter adapter = new ListAdapter();
         adapter.setOnItemClickListener(this);
-        adapter.setData(SharedPreferencesHelper.getInstance().init(mActivity).getSharedPreferenceFiles());
+        adapter.setData(SharedPreferencesHelper.getSharedPreferenceFiles(mActivity));
 
         return ViewUtils.createDecorView(
                 mActivity, inflater, adapter, mActivity.getString(R.string.shared_preferences_title)

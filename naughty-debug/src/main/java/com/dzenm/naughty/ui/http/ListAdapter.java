@@ -13,6 +13,7 @@ import com.dzenm.naughty.Naughty;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.base.BaseAdapter;
 import com.dzenm.naughty.http.HttpBean;
+import com.dzenm.naughty.util.Dimens;
 import com.dzenm.naughty.util.ViewUtils;
 
 class ListAdapter extends BaseAdapter<HttpBean> {
@@ -23,7 +24,8 @@ class ListAdapter extends BaseAdapter<HttpBean> {
     }
 
     @Override
-    protected void onBindData(@NonNull BaseAdapter.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        super.onBindViewHolder(holder, position);
         final HttpBean bean = data.get(position);
         String statusString = bean.getStatus();
         boolean result;
@@ -69,7 +71,7 @@ class ListAdapter extends BaseAdapter<HttpBean> {
         boolean isFinished = Naughty.getInstance().isHttpFinished(bean.getLoadingState());
         tvResult.setVisibility(isFinished ? View.VISIBLE : View.GONE);
         tvResult.setText(result ? "Success" : "Failed");
-        float radius = 4f;
+        float radius = Dimens.RADIUS_4F;
         tvResult.setBackground(ViewUtils.getStatusDrawable(ViewUtils.resolveColor(context, color), radius));
 
         holder.getProgressBarId(R.id.progress_bar).setVisibility(isFinished ? View.INVISIBLE : View.VISIBLE);

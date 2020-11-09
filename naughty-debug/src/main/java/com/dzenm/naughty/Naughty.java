@@ -206,17 +206,6 @@ public class Naughty extends BaseNaughty {
         this.mIFloatingView = floatingView;
     }
 
-    /**
-     * 启动FloatingActivity
-     *
-     * @param context 上下文
-     */
-    public void startActivity(Context context) {
-        Intent intent = new Intent(context, MainModelActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
-    }
-
     @SuppressLint("ClickableViewAccessibility")
     public void onCreate(final NaughtyService service) {
         this.mService = service;
@@ -292,6 +281,17 @@ public class Naughty extends BaseNaughty {
         mWindowManager = null;
         mLayoutParams = null;
         mDecorView = null;
+    }
+
+    /**
+     * 启动FloatingActivity
+     *
+     * @param context 上下文
+     */
+    public static void startActivity(Context context) {
+        Intent intent = new Intent(context, MainModelActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
     }
 
     /**

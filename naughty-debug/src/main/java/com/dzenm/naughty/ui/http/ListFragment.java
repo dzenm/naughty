@@ -29,7 +29,8 @@ import com.dzenm.naughty.util.ViewUtils;
  * 显示Http请求页面
  */
 public class ListFragment extends BaseFragment<MainModelActivity> implements
-        Naughty.OnRequestListener, ListAdapter.OnItemClickListener<HttpBean> {
+        Naughty.OnRequestListener,
+        ListAdapter.OnItemClickListener<HttpBean> {
 
     private ListAdapter mAdapter;
 
@@ -80,7 +81,7 @@ public class ListFragment extends BaseFragment<MainModelActivity> implements
         } else if (item.getItemId() == R.id.close) {
             Naughty.getInstance().setShowNotification(false);
             mActivity.stopService(new Intent(mActivity, NaughtyService.class));
-            mActivity.back(true);
+            mActivity.onBackKeyboard(true);
         }
         return super.onOptionsItemSelected(item);
     }
@@ -96,8 +97,7 @@ public class ListFragment extends BaseFragment<MainModelActivity> implements
             );
         } else {
             Toast.makeText(mActivity, mActivity.getString(R.string.toast_internet_loading_failed),
-                    Toast.LENGTH_SHORT
-            ).show();
+                    Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -110,5 +110,4 @@ public class ListFragment extends BaseFragment<MainModelActivity> implements
             }
         });
     }
-
 }
