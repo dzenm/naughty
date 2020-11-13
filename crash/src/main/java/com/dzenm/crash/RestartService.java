@@ -10,8 +10,8 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 /**
- * 记得在AndroidManifest添加服务
- * <service android:name="com.sd.fireelevs.core.crash.RestartService" />
+ * 在AndroidManifest添加服务
+ * <service android:name="com.dzenm.crash.RestartService" />
  * <pre>
  * RestartService.restart(mActivity);
  * </pre>
@@ -21,7 +21,7 @@ public class RestartService extends Service {
     private static final String INTENT_PACKAGE_NAME = "package_name";
     private static final String TAG = RestartService.class.getSimpleName();
 
-    private Handler mHandler;
+    private final Handler mHandler;
 
     public RestartService() {
         Log.d(TAG, "初始化重启服务");
@@ -43,15 +43,17 @@ public class RestartService extends Service {
 
     private void restart(Intent intent) {
         final String packageName = intent.getStringExtra(INTENT_PACKAGE_NAME);
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Intent launchIntent = getPackageManager().getLaunchIntentForPackage(packageName);
-                startActivity(launchIntent);
-                Log.d(TAG, "结束重启服务");
-                stopSelf();
-            }
-        }, 0);
+        if (packageName != null) {
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Intent launchIntent = getPackageManager().getLaunchIntentForPackage(packageName);
+                    startActivity(launchIntent);
+                    Log.d(TAG, "结束重启服务");
+                    stopSelf();
+                }
+            }, 0);
+        }
     }
 
     /**
@@ -60,12 +62,10 @@ public class RestartService extends Service {
      * @param context 上下文
      */
     public static void restart(Context context) {
-        Log.d(TAG, "开始重启服务");
+        Log.d(TAG, "进入重启服务");
         // 开启一个新的服务，用来重启本APP
         Intent intent = new Intent(context, RestartService.class);
         intent.putExtra(INTENT_PACKAGE_NAME, context.getPackageName());
         context.startService(intent);
-        // 杀死整个进程
-        android.os.Process.killProcess(android.os.Process.myPid());
     }
 }

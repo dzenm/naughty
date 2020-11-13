@@ -1,15 +1,17 @@
 package com.dzenm;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.dzenm.crash.ActivityHelper;
+import com.dzenm.crash.CrashHelper;
 import com.dzenm.naughty.Naughty;
 
 import java.io.IOException;
@@ -29,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ActivityHelper.getInstance().push(this);
 
         SharedPreferences sp = getSharedPreferences("test_login", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
@@ -38,9 +41,10 @@ public class MainActivity extends AppCompatActivity {
 
         textView = findViewById(R.id.text);
 
-        textView.setOnClickListener(v -> provideOkHttpClient());
-
-        provideOkHttpClient();
+        Button request = findViewById(R.id.btn_request);
+        Button crash = findViewById(R.id.btn_crash);
+        request.setOnClickListener(v -> provideOkHttpClient());
+        crash.setOnClickListener(v -> { startActivity(new Intent(this, PersonActivity.class)); });
     }
 
     /**

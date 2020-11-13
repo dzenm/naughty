@@ -25,13 +25,6 @@ import java.util.Locale;
  */
 public class LogHelper {
 
-    public static final int LEVEL_NONE = 1;
-    public static final int LEVEL_VERBOSE = 2;
-    public static final int LEVEL_DEBUG = 3;
-    public static final int LEVEL_INFO = 4;
-    public static final int LEVEL_WARN = 5;
-    public static final int LEVEL_ERROR = 6;
-
     private static final String TAG = LogHelper.class.getSimpleName();
 
     private static volatile LogHelper sInstance = null;
@@ -55,21 +48,25 @@ public class LogHelper {
      * 不同级别日志的颜色
      */
     private String[] mLevelColor = new String[]{
-            "#9E9E9E", "#2196F3", "#4CAF50", "#FFC107", "#F44336", "#000000"
+            "#9E9E9E", "#2196F3", "#4CAF50",
+            "#FFC107", "#F44336", "#000000"
     };
-
-    /**
-     * 当前应用的PID
-     */
-    private int mPid;
 
     /**
      * 日志的级别
      */
-    private int mLevel = LEVEL_NONE;
+    private int mLevel = Level.NONE;
+
+    public @interface Level {
+        int NONE = 1;
+        int VERBOSE = 2;
+        int DEBUG = 3;
+        int INFO = 4;
+        int WARN = 5;
+        int ERROR = 6;
+    }
 
     private LogHelper() {
-        mPid = android.os.Process.myPid();
     }
 
     public static LogHelper getInstance() {
@@ -88,7 +85,7 @@ public class LogHelper {
      * @param level 日志的级别
      * @return this
      */
-    public LogHelper setLevel(int level) {
+    public LogHelper setLevel(@Level int level) {
         mLevel = level;
         return this;
     }
@@ -111,7 +108,6 @@ public class LogHelper {
         reset(mLevel);
         if (mLogThread != null) {
             mLogThread.mCommands = mCommands;
-            mLogThread.isRest = true;
         }
     }
 
@@ -126,23 +122,14 @@ public class LogHelper {
     }
 
     /**
-     * @return this
-     * @see {@link #start(OnChangeListener)}
-     */
-    public LogHelper start() {
-        return start(null);
-    }
-
-    /**
      * 开始打印日志
      *
      * @param mOnChangeListener 日志输出监听
-     * @return this
      */
-    public LogHelper start(OnChangeListener mOnChangeListener) {
+    public void start(OnChangeListener mOnChangeListener) {
         reset();
         if (mLogThread == null) {
-            mLogThread = new LogThread(String.valueOf(mPid));
+            mLogThread = new LogThread();
             mLogThread.mCommands = mCommands;
             mLogThread.mOnChangeListener = mOnChangeListener;
         }
@@ -153,7 +140,6 @@ public class LogHelper {
             mLogThread.start();
         }
         System.out.println(TAG + "开始保存日志");
-        return this;
     }
 
     /**
@@ -203,20 +189,26 @@ public class LogHelper {
             mTag = "*";
         }
         System.out.println(TAG + "日志过滤TAG: " + mTag + ", 日志Level: " + level);
-        if (level == LEVEL_VERBOSE) {
-            mCommands = "logcat -v brief -s " + mTag + ":v";
-        } else if (level == LEVEL_DEBUG) {
-            mCommands = "logcat -v brief -s " + mTag + ":d";
-        } else if (level == LEVEL_INFO) {
-            mCommands = "logcat -v brief -s " + mTag + ":i";
-        } else if (level == LEVEL_WARN) {
-            mCommands = "logcat -v brief -s " + mTag + ":w";
-        } else if (level == LEVEL_ERROR) {
-            mCommands = "logcat -v brief -s " + mTag + ":e";
-        } else if (level == LEVEL_NONE) {
-            mCommands = "logcat -v brief -s " + mTag;
-        }
+        mCommands = "logcat -v brief -s " + mTag + getLevelCommand(level);
         System.out.println(TAG + "日志输出命令: " + mCommands);
+    }
+
+    private String getLevelCommand(int level) {
+        String command;
+        if (level == Level.VERBOSE) {
+            command = ":v";
+        } else if (level == Level.DEBUG) {
+            command = ":d";
+        } else if (level == Level.INFO) {
+            command = ":i";
+        } else if (level == Level.WARN) {
+            command = ":w";
+        } else if (level == Level.ERROR) {
+            command = ":e";
+        } else {
+            command = "";
+        }
+        return command;
     }
 
     /**
@@ -226,84 +218,80 @@ public class LogHelper {
 
         private static final int MAX_LOG_COUNT = 10000;
 
+        private final String mPid = String.valueOf(android.os.Process.myPid());
         private String mCommands;
-        private String mPid;
         private Process mLogcatProcess;
         private BufferedReader mBufferedReader;
 
-        private boolean mRunning = true;
-        private boolean isRest = false;
+        private boolean mThreadFlag = true;
+        private boolean isRunning = true;
         private OnChangeListener mOnChangeListener;
 
-        private List<String> mData = new ArrayList<>();
+        private final List<String> mData = new ArrayList<>();
 
-        private LogThread(String pid) {
-            mPid = pid;
+        private LogThread() {
         }
 
         private void stopLogs() {
-            mRunning = false;
+            isRunning = false;
+        }
+
+        private void reset(String command) {
+            execLogCommand(command);
         }
 
         @Override
         public void run() {
             super.run();
             try {
-                execLogCommand();
-                String line;
-                while (mRunning && (line = mBufferedReader.readLine()) != null) {
-                    if (!mRunning) {
-                        break;
-                    }
-                    if (isRest) {
-                        execLogCommand();
-                        isRest = false;
-                    }
-                    ;
-                    if (line.length() == 0) {
-                        continue;
-                    }
-                    SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss:SSS", Locale.getDefault());
-                    String time = format.format(new Date());
-                    if (line.contains(mPid)) {
-                        String text = "[" + time + "] " + line + "\n";
-                        callLogChangedListener(text);
-                        adjustCount(text);
-                    }
-                }
-                mBufferedReader.close();
-                mLogcatProcess.destroy();
+                execLogCommand(mCommands);
+                readLogBuffered();
+                mThreadFlag = false;
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                if (mLogcatProcess != null) {
-                    mLogcatProcess.destroy();
-                    mLogcatProcess = null;
-                }
-                if (mBufferedReader != null) {
-                    try {
+                try {
+                    if (mBufferedReader != null) {
                         mBufferedReader.close();
                         mBufferedReader = null;
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }
 
-        private void execLogCommand() throws IOException {
-            mData.clear();
-            mLogcatProcess = Runtime.getRuntime().exec(mCommands);
-            mBufferedReader = new BufferedReader(
-                    new InputStreamReader(mLogcatProcess.getInputStream()), 1024
-            );
-            System.out.println(TAG + "执行Log输出命令...");
+        private void readLogBuffered() throws IOException {
+            String line;
+            while (mThreadFlag && (line = mBufferedReader.readLine()) != null) {
+                if (line.length() == 0 || !line.contains(mPid) || !isRunning) {
+                    continue;
+                }
+                String time = formatTime().format(new Date());
+                String text = "[" + time + "] " + line + "\n";
+                if (mOnChangeListener != null) {
+                    mOnChangeListener.onChanged(text);
+                }
+                insertNewLogWhenCapacityEnough(text);
+            }
+            mBufferedReader.close();
+            mLogcatProcess.destroy();
         }
 
-        private void callLogChangedListener(String text) {
-            if (mOnChangeListener != null) {
-                mOnChangeListener.onChanged(text);
+        private void execLogCommand(String command) {
+            try {
+                mData.clear();
+                mLogcatProcess = Runtime.getRuntime().exec(command);
+                mBufferedReader = new BufferedReader(
+                        new InputStreamReader(mLogcatProcess.getInputStream()), 1024);
+                System.out.println(TAG + "执行Log输出命令...");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+        }
+
+        private SimpleDateFormat formatTime() {
+            return new SimpleDateFormat("HH:mm:ss:SSS", Locale.getDefault());
         }
 
         /**
@@ -315,17 +303,17 @@ public class LogHelper {
         private int getLogLevel(String text) {
             String front = " ";
             if (text.contains(front + "V/")) {
-                return LEVEL_VERBOSE;
+                return Level.VERBOSE;
             } else if (text.contains(front + "D/")) {
-                return LEVEL_DEBUG;
+                return Level.DEBUG;
             } else if (text.contains(front + "I/")) {
-                return LEVEL_INFO;
+                return Level.INFO;
             } else if (text.contains(front + "W/")) {
-                return LEVEL_WARN;
+                return Level.WARN;
             } else if (text.contains(front + "E/")) {
-                return LEVEL_ERROR;
+                return Level.ERROR;
             } else {
-                return LEVEL_NONE;
+                return Level.NONE;
             }
         }
 
@@ -340,10 +328,8 @@ public class LogHelper {
             return String.format("<font color=\"" + mLevelColor[color - 2] + "\">%s</font>", text);
         }
 
-        private void adjustCount(String text) {
-            if (mData.size() > MAX_LOG_COUNT) {
-                mData.remove(0);
-            }
+        private void insertNewLogWhenCapacityEnough(String text) {
+            if (mData.size() > MAX_LOG_COUNT) mData.remove(0);
             mData.add(text);
         }
     }

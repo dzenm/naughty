@@ -35,35 +35,33 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
 
     private static final String TAG = CrashHelper.class.getSimpleName();
 
+    /**
+     * log文件的前缀名
+     */
     private static final String FILE_NAME = "crash";
-
     /**
      * log文件的后缀名
      */
     private static final String SUFFIX = ".txt";
 
-    private Context mContext;
-    private Activity mActivity;
-
-    /**
-     * 系统默认异常处理器, （默认情况下，系统会终止当前的异常程序）
-     */
-    private Thread.UncaughtExceptionHandler mDefaultHandler;
     @SuppressLint("StaticFieldLeak")
     private static volatile CrashHelper sInstance;
-
-    private CaughtExceptionHandler mCaughtExceptionHandler;
-
-    /**
-     * 自定义处理异常信息
-     */
-    private OnCaughtExceptionMessageListener mOnCaughtExceptionMessageListener;
-
+    private Context mContext;
+    private boolean isDebug = true;
     /**
      * 是否保存为本地文件
      */
     private boolean isCache = true;
     private String mFilePath;
+
+    /**
+     * 系统默认异常处理器, （默认情况下，系统会终止当前的异常程序）
+     */
+    private Thread.UncaughtExceptionHandler mDefaultUncaughtExceptionHandler;
+    /**
+     * 自定义处理异常信息
+     */
+    private OnCaughtExceptionMessageListener mOnCaughtExceptionMessageListener;
 
     private CrashHelper() {
     }
@@ -100,28 +98,26 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
     public CrashHelper init(Context context, boolean globalCatch) {
         mContext = context.getApplicationContext();
         // 获取系统默认的异常处理器
-        mDefaultHandler = Thread.getDefaultUncaughtExceptionHandler();
+        mDefaultUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
         // 将当前实例设为系统默认的异常处理器
         Thread.setDefaultUncaughtExceptionHandler(this);
 
         if (globalCatch) interceptException();
 
-        mFilePath = mContext.getFilesDir().getAbsolutePath();
+        File cacheDir = mContext.getExternalCacheDir();
+        if (cacheDir != null) {
+            mFilePath = cacheDir.getAbsolutePath() + File.separator + "crash";
+        }
         return this;
     }
 
-    public CrashHelper register(Activity activity) {
-        mActivity = activity;
+    public CrashHelper setNoCache() {
+        isCache = false;
         return this;
     }
 
-    public CrashHelper unregister() {
-        mActivity = null;
-        return this;
-    }
-
-    public CrashHelper setCache(boolean cache) {
-        isCache = cache;
+    public CrashHelper setDebug(boolean debug) {
+        isDebug = debug;
         return this;
     }
 
@@ -130,13 +126,8 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
         return this;
     }
 
-    public CrashHelper setCaughtExceptionHandler(CaughtExceptionHandler caughtExceptionHandler) {
-        mCaughtExceptionHandler = caughtExceptionHandler;
-        return this;
-    }
-
     public CrashHelper setFilePath(String filePath) {
-        this.mFilePath = filePath;
+        mFilePath = filePath;
         return this;
     }
 
@@ -169,14 +160,10 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
      */
     @Override
     public void uncaughtException(@NonNull Thread t, @NonNull Throwable ex) {
-        Log.e(TAG, "uncaughtException");
         // 拦截子线程的异常
-        if (handlerException(ex, false) && mDefaultHandler != null) {
+        if (handlerException(ex, false) && mDefaultUncaughtExceptionHandler != null) {
             // 如果系统提供了默认的异常处理器，则交给系统去结束我们的程序，否则就由我们自己结束自己
-            mDefaultHandler.uncaughtException(t, ex);
-        } else {
-            // 处理异常信息
-            mCaughtExceptionHandler.caughtException(t, ex);
+            mDefaultUncaughtExceptionHandler.uncaughtException(t, ex);
         }
     }
 
@@ -189,11 +176,10 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
      */
     private boolean handlerException(Throwable ex, boolean globalCatch) {
         if (ex == null) return false;
-        Log.e(TAG, "handlerException...");
         try {
             // 导出异常信息到SD卡中
             StringBuilder sb = new StringBuilder();
-            Log.e(TAG, "开始输出异常信息");
+            Log.i(TAG, "开始收集崩溃信息");
             sb.append("-------- 开始收集设备信息 --------\n");
             // 导出手机信息
             String phoneInfo = dumpPhoneInfo();
@@ -205,15 +191,23 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
             String exceptionInfo = dumpExceptionInfo(ex);
             sb.append(exceptionInfo);
             sb.append("\n-------- 异常信息收集完成 --------");
-            Log.e(TAG, "输出异常信息完成");
+            Log.i(TAG, "崩溃信息收集完成");
+            Log.e(TAG, exceptionInfo);
 
             String errorMessage = sb.toString();
 
-            showErrorDialog(exceptionInfo);
             saveAsFile(errorMessage);
             // 这里可以通过网络上传异常信息到服务器，便于开发人员分析日志从而解决bug
             if (mOnCaughtExceptionMessageListener != null) {
                 mOnCaughtExceptionMessageListener.onHandlerMessage(errorMessage);
+            }
+
+            if (globalCatch) {
+                if (isDebug) {
+                    showErrorDialog(exceptionInfo);
+                }
+            } else {
+                ActivityHelper.getInstance().exit();
             }
             return true;
         } catch (IOException e) {
@@ -228,26 +222,26 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
      * @param errorMessage 异常信息
      */
     private void saveAsFile(String errorMessage) {
-        Log.e(TAG, "saveAsFile...");
-        if (isCache) {
-            // 获取当前时间以创建log文件
-            long current = System.currentTimeMillis();
-            @SuppressLint("SimpleDateFormat")
-            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS")
-                    .format(new Date(current));
-            // log文件名
-            String fileName = FILE_NAME + "_" + time + SUFFIX;
-            // log文件夹
-            File parent = new File(mFilePath);
-            // 保存文件
-            if (createFile(parent, fileName, errorMessage)) {
-                // 删除其它文件
-                if (delete(parent, fileName)) {
-                    Log.d(TAG, "异常日志文件: " + parent + File.separator + fileName);
-                }
-            } else {
-                Log.d(TAG, "创建异常日志文件失败");
-            }
+        if (!isCache) return;
+        Log.i(TAG, "saveAsFile...");
+
+        // 获取当前时间以创建log文件
+        long current = System.currentTimeMillis();
+        @SuppressLint("SimpleDateFormat")
+        String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS")
+                .format(new Date(current));
+        // log文件名
+        String fileName = FILE_NAME + "_" + time + SUFFIX;
+        // log文件夹
+        File parent = new File(mFilePath);
+        if (!parent.exists()) parent.mkdirs();
+        // 保存文件
+        if (createFile(parent, fileName, errorMessage)) {
+            // 删除其它文件
+            delete(parent, fileName);
+            Log.d(TAG, "异常日志文件: " + parent + File.separator + fileName);
+        } else {
+            Log.d(TAG, "创建异常日志文件失败");
         }
     }
 
@@ -255,7 +249,6 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
      * 收集设备参数信息
      */
     private String dumpPhoneInfo() {
-        Log.e(TAG, "开始收集设备参数信息");
         StringBuilder sb = new StringBuilder();
         // 应用的版本名称和版本号
         try {
@@ -278,13 +271,12 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
             // 迭代Build的字段key-value 此处的信息主要是为了在服务器端手机各种版本手机报错的原因
             for (Field field : fields) {
                 field.setAccessible(true);
-                sb.append("\n").append(field.getName()).append(": ").append(field.get("").toString());
+                sb.append("\n").append(field.getName()).append(": ").append(field.get(""));
             }
         } catch (PackageManager.NameNotFoundException | IllegalAccessException e) {
             e.printStackTrace();
             Log.e(TAG, "收集设备参数信息失败: " + e);
         }
-        Log.e(TAG, "收集设备参数信息完成");
         return sb.toString();
     }
 
@@ -335,19 +327,16 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
      * @param filterName 过滤的文件名称
      * @return 是否删除成功
      */
-    public boolean delete(File folder, String filterName) {
+    public void delete(File folder, String filterName) {
         File[] files = folder.listFiles();
-        if (files == null || files.length == 0) return false;
-        Log.d(TAG, folder.getPath() + "文件夹里共有" + files.length + "个文件");
-        boolean isDelete = true;
+        if (files == null || files.length == 0) return;
+        Log.d(TAG, "路径 " + folder.getPath() + " 下有" + files.length + "个文件");
         for (File file : files) {
             if (file.getName().equals(filterName)) continue;
-            if (file.isDirectory()) continue;
-            if (file.exists()) isDelete = file.delete();
-            if (!isDelete) break;
+            String fileType = file.isFile() ? "文件 " : "文件夹 ";
+            if (file.isDirectory()) delete(file, filterName);
+            Log.d(TAG, fileType + file.getName() + " 删除" + (file.delete() ? "成功" : "失败"));
         }
-        Log.d(TAG, "文件删除" + (isDelete ? "成功" : "失败"));
-        return isDelete;
     }
 
     /**
@@ -356,13 +345,16 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
      * @param exceptionInfo 异常信息
      */
     private void showErrorDialog(final String exceptionInfo) {
-        if (mActivity == null) return;
         Log.e(TAG, "崩溃错误提示...");
+        final Activity activity = ActivityHelper.getInstance().peek();
+        if (activity == null) {
+            return;
+        }
         new Thread(new Runnable() {
             @Override
             public void run() {
                 Looper.prepare();
-                new AlertDialog.Builder(mActivity)
+                new AlertDialog.Builder(activity)
                         .setTitle("出错了")
                         .setCancelable(false)
                         .setMessage(exceptionInfo)
@@ -370,7 +362,8 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
-                                RestartService.restart(mActivity);
+                                RestartService.restart(activity);
+                                ActivityHelper.getInstance().finish();
                                 Log.w(TAG, "准备重启APP...");
                             }
                         })
@@ -378,7 +371,7 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
-                                kill();
+                                ActivityHelper.getInstance().exit();
                                 Log.w(TAG, "全部退出APP...");
                             }
                         }).create()
@@ -386,14 +379,6 @@ public class CrashHelper implements Thread.UncaughtExceptionHandler {
                 Looper.loop();
             }
         }).start();
-    }
-
-    private static void kill() {
-        android.os.Process.killProcess(android.os.Process.myPid());
-    }
-
-    public interface CaughtExceptionHandler {
-        void caughtException(Thread t, Throwable e);
     }
 
     public interface OnCaughtExceptionMessageListener {
