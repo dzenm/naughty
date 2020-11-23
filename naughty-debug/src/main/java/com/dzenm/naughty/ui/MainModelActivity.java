@@ -15,12 +15,14 @@ import android.widget.FrameLayout;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.FragmentManager;
 
 import com.dzenm.naughty.Naughty;
 import com.dzenm.naughty.NaughtyService;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.ui.http.ListFragment;
+import com.dzenm.naughty.util.SettingUtils;
 import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
 
@@ -35,6 +37,8 @@ public class MainModelActivity extends AppCompatActivity {
         setContentView(createView());
         Log.d(TAG, "onCreate task id: " + getTaskId());
 
+        getDelegate().setLocalNightMode(loadThemeMode(SettingUtils.getThemeMode(this)));
+
         Window window = getWindow();
         // 添加状态栏背景可绘制模式
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
@@ -45,8 +49,7 @@ public class MainModelActivity extends AppCompatActivity {
         checkServiceWithEnabled(this);
 
         Utils.clearStack(getSupportFragmentManager());
-        ListFragment fragment = ListFragment.newInstance();
-        Utils.switchFragment(getSupportFragmentManager(), null, fragment);
+        Utils.switchFragment(getSupportFragmentManager(), null, ListFragment.newInstance());
     }
 
     @Override
@@ -125,13 +128,27 @@ public class MainModelActivity extends AppCompatActivity {
         }
     }
 
+    public int loadThemeMode(String value) {
+        int mode = 0;
+        String[] values = getResources().getStringArray(R.array.theme_mode);
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].equals(value)) mode = i;
+        }
+        if (mode == 0) {
+            return AppCompatDelegate.MODE_NIGHT_NO;
+        } else if (mode == 1) {
+            return AppCompatDelegate.MODE_NIGHT_YES;
+        } else return AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
+    }
+
     /**
      * 启动悬浮窗, 启动之前会检测是否开启服务, 是否获取悬浮窗权限, 如果未开启, 则会提示授权
      *
      * @param activity 上下文
      */
     private void checkServiceWithEnabled(final AppCompatActivity activity) {
-        if (Naughty.getInstance().isCreated || Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
+        if (Naughty.getInstance().isCreated || Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+                || !SettingUtils.isEnabledFloating(this))
             return;
 
         if (Utils.checkOverlaysPermission(activity)) {

@@ -50,6 +50,12 @@ import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.preference.ListPreference;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceCategory;
+import androidx.preference.PreferenceManager;
+import androidx.preference.PreferenceScreen;
+import androidx.preference.SwitchPreferenceCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
@@ -64,6 +70,22 @@ public class ViewUtils {
     //************************************** Float View ***************************************//
 
     /**
+     * 创建悬浮窗(按钮)
+     *
+     * @param context 上下文
+     * @return Floating View
+     */
+    public static TextView createFloatingView(Context context) {
+        TextView textView = new TextView(context);
+        textView.setLayoutParams(new FrameLayout.LayoutParams(dp2px(64), dp2px(64)));
+        textView.setText("网络调试");
+        textView.setGravity(Gravity.CENTER);
+        textView.setTextColor(context.getColor(android.R.color.white));
+        textView.setBackgroundResource(R.drawable.ic_floating);
+        return textView;
+    }
+
+    /**
      * 创建悬浮窗(带日志调试)
      *
      * @param context 上下文
@@ -73,7 +95,7 @@ public class ViewUtils {
      * @return Floating View
      */
     public static LinearLayout createFloatingLogModel(
-            Context context, RecyclerView.Adapter adapter, int width, int height
+            Context context, RecyclerView.Adapter<?> adapter, int width, int height
     ) {
         LinearLayout parent = new LinearLayout(context);
         parent.setLayoutParams(new FrameLayout.LayoutParams(width, height));
@@ -130,11 +152,11 @@ public class ViewUtils {
     }
 
     /**
-     * 创建Floating View配置信息
+     * 创建Floating LogModel View配置信息
      *
      * @return Floating View配置信息
      */
-    public static WindowManager.LayoutParams createFloatingViewParams() {
+    public static WindowManager.LayoutParams createFloatingLogModelViewParams() {
         WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             layoutParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
@@ -293,7 +315,7 @@ public class ViewUtils {
      * @return LinearLayout
      */
     public static LinearLayout createDecorView(
-            MainModelActivity activity, LayoutInflater inflater, RecyclerView.Adapter adapter, CharSequence title
+            MainModelActivity activity, LayoutInflater inflater, RecyclerView.Adapter<?> adapter, CharSequence title
     ) {
         LinearLayout parent = new LinearLayout(activity);
         parent.setLayoutParams(new LinearLayout.LayoutParams(
@@ -346,7 +368,7 @@ public class ViewUtils {
      * @return 创建RecyclerView
      */
     public static RecyclerView createRecyclerView(
-            final Context context, RecyclerView.Adapter adapter
+            final Context context, RecyclerView.Adapter<?> adapter
     ) {
         // 添加并设置RecyclerView
         RecyclerView recyclerView = new RecyclerView(context);
@@ -381,7 +403,6 @@ public class ViewUtils {
         parent.setLayoutParams(params);
         return parent;
     }
-
 
     //************************************** Content View ****************************************//
 
@@ -559,6 +580,55 @@ public class ViewUtils {
         return tab;
     }
 
+    //************************************** Setting View ***************************************//
+
+    public static PreferenceScreen createScreen(Context context, PreferenceManager manager) {
+        return manager.createPreferenceScreen(context);
+    }
+
+    public static PreferenceCategory createCategory(Context context, CharSequence title) {
+        PreferenceCategory category = new PreferenceCategory(context);
+        category.setTitle(title);
+        return category;
+    }
+
+    public static Preference createPreference(Context context, int title, int summary) {
+        Preference preference = new Preference(context);
+        preference.setCopyingEnabled(true);
+        preference.setTitle(title);
+        preference.setSummary(summary);
+        return preference;
+    }
+
+    public static Preference createPreference(Context context, int title) {
+        Preference preference = new Preference(context);
+        preference.setCopyingEnabled(true);
+        preference.setTitle(title);
+        return preference;
+    }
+
+    public static SwitchPreferenceCompat createSwitch(Context context, boolean defValue,
+                                                      int title, int summary) {
+        SwitchPreferenceCompat switchButton = new SwitchPreferenceCompat(context);
+        switchButton.setSingleLineTitle(true);
+        switchButton.setDefaultValue(defValue);
+        switchButton.setTitle(title);
+        switchButton.setSummary(summary);
+        return switchButton;
+    }
+
+    public static ListPreference createList(Context context, int defValueId, int titleId,
+                                            int dialogTitle, int entriesId) {
+        ListPreference list = new ListPreference(context);
+        list.setDefaultValue(context.getText(defValueId));
+        list.setTitle(titleId);
+        list.setDialogTitle(dialogTitle);
+        list.setEntries(context.getResources().getStringArray(entriesId));
+        list.setEntryValues(context.getResources().getStringArray(entriesId));
+        list.setSummaryProvider(ListPreference.SimpleSummaryProvider.getInstance());
+        return list;
+    }
+
     //************************************** Drawable ********************************************//
 
     public static int resolveColor(@NonNull Context context, int attrRes) {
@@ -623,8 +693,8 @@ public class ViewUtils {
 
     public static class TabAdapter extends FragmentPagerAdapter {
 
-        private String[] titles;
-        private Fragment[] fragments;
+        private final String[] titles;
+        private final Fragment[] fragments;
 
         public TabAdapter(@NonNull FragmentManager fm, String[] titles, Fragment[] fragments) {
             super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);

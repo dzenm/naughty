@@ -43,11 +43,10 @@ public class ListFragment extends BaseFragment<MainModelActivity> implements
 
     @Override
     public void onItemClick(File data, int position) {
-        ItemFragment fragment = ItemFragment.newInstance(data.getAbsolutePath());
         Utils.switchFragment(
                 mActivity.getSupportFragmentManager(),
                 this,
-                fragment
+                ItemFragment.newInstance(data.getAbsolutePath())
         );
     }
 }

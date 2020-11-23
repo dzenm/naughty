@@ -15,10 +15,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.dzenm.core.BaseNaughty;
 import com.dzenm.log.LogHelper;
+import com.dzenm.naughty.http.HttpBean;
 import com.dzenm.naughty.http.HttpInterceptor;
 import com.dzenm.naughty.ui.MainModelActivity;
-import com.dzenm.naughty.http.HttpBean;
 import com.dzenm.naughty.ui.log.LogItemAdapter;
+import com.dzenm.naughty.util.SettingUtils;
 import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
 
@@ -37,7 +38,7 @@ import okhttp3.Interceptor;
  * 第二, 在Okhttp中添加Interceptor
  * builder.addInterceptor(Naughty.newInstance().setDebug(true).get(this));
  */
-public class Naughty extends BaseNaughty {
+public class Naughty extends BaseNaughty implements View.OnClickListener {
 
     private static final String TAG = Naughty.class.getSimpleName();
 
@@ -70,6 +71,11 @@ public class Naughty extends BaseNaughty {
     private FrameLayout mDecorView;
 
     /**
+     * 悬浮窗样式
+     */
+    private int mFloatingStyle;
+
+    /**
      * 设置悬浮窗的大小
      */
     private int mWidth = -1, mHeight = -1;
@@ -77,7 +83,7 @@ public class Naughty extends BaseNaughty {
     /**
      * 请求的数据
      */
-    private List<HttpBean> mData = new ArrayList<>();
+    private final List<HttpBean> mData = new ArrayList<>();
 
     private IFloatingView mIFloatingView;
     private OnRequestListener mOnRequestListener;
@@ -153,8 +159,13 @@ public class Naughty extends BaseNaughty {
 
     @Override
     public void show() {
-        if (isCreated) {
+        if (isCreated && SettingUtils.isEnabledFloating(mService)) {
             if (!isShowing && mWindowManager != null && mDecorView != null) {
+                int index = SettingUtils.getFloatingStyle(mService);
+                if (index != mFloatingStyle) {
+                    mFloatingStyle = index;
+                    recreateView(mService);
+                }
                 isShowing = true;
                 mWindowManager.addView(mDecorView, mLayoutParams);
             }
@@ -163,7 +174,7 @@ public class Naughty extends BaseNaughty {
 
     @Override
     public void dismiss() {
-        if (isCreated) {
+        if (isCreated && SettingUtils.isEnabledFloating(mService)) {
             if (isShowing && mWindowManager != null && mDecorView != null) {
                 isShowing = false;
                 mWindowManager.removeView(mDecorView);
@@ -207,28 +218,38 @@ public class Naughty extends BaseNaughty {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    public void onCreate(final NaughtyService service) {
+    public void onCreate(NaughtyService service) {
         this.mService = service;
         isCreated = true;
 
         if (Utils.checkOverlaysPermission(service)) {
             mWindowManager = (WindowManager) service.getSystemService(Context.WINDOW_SERVICE);
-            mLayoutParams = ViewUtils.createFloatingViewParams();
+            mLayoutParams = ViewUtils.createFloatingLogModelViewParams();
 
             mDecorView = new FrameLayout(mService);
             mDecorView.setLayoutParams(new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT
             ));
+            mFloatingStyle = SettingUtils.getFloatingStyle(mService);
+            recreateView(service);
+            mDecorView.setOnTouchListener(new FloatingTouchListener());
+        }
+    }
 
-            if (mWidth == -1) {
-                mWidth = ViewUtils.getWidth() * 3 / 8;
-            }
-            if (mHeight == -1) {
-                mHeight = mWidth * 4 / 3;
-            }
+    private void recreateView(NaughtyService service) {
+        mDecorView.removeAllViews();
+        if (mIFloatingView == null) {
+            if (mFloatingStyle == 0) {
+                mDecorView.addView(ViewUtils.createFloatingView(service));
+                mDecorView.setOnClickListener(this);
+            } else if (mFloatingStyle == 1) {
+                if (mWidth == -1) {
+                    mWidth = ViewUtils.getWidth() * 3 / 8;
+                }
+                if (mHeight == -1) {
+                    mHeight = mWidth * 4 / 3;
+                }
 
-            if (mIFloatingView == null) {
-//                mDecorView.addView(ViewUtils.createFloatingView(service));
                 final LogItemAdapter adapter = new LogItemAdapter();
                 mDecorView.addView(ViewUtils.createFloatingLogModel(service, adapter, mWidth, mHeight));
 
@@ -254,24 +275,16 @@ public class Naughty extends BaseNaughty {
                     }
                 });
                 adapter.setData(LogHelper.getInstance().getData());
-
-                network.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        startActivity(mService);
-                    }
-                });
-            } else {
-                mDecorView.addView(mIFloatingView.create(mDecorView));
+                network.setOnClickListener(this);
             }
-            mDecorView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-
-                }
-            });
-            mDecorView.setOnTouchListener(new FloatingTouchListener());
+        } else {
+            mDecorView.addView(mIFloatingView.create(mDecorView));
         }
+    }
+
+    @Override
+    public void onClick(View v) {
+        startActivity(mService);
     }
 
     public void onDestroy() {

@@ -11,7 +11,6 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.dzenm.crash.ActivityHelper;
-import com.dzenm.crash.CrashHelper;
 import com.dzenm.naughty.Naughty;
 
 import java.io.IOException;
@@ -44,7 +43,9 @@ public class MainActivity extends AppCompatActivity {
         Button request = findViewById(R.id.btn_request);
         Button crash = findViewById(R.id.btn_crash);
         request.setOnClickListener(v -> provideOkHttpClient());
-        crash.setOnClickListener(v -> { startActivity(new Intent(this, PersonActivity.class)); });
+        crash.setOnClickListener(v -> {
+            startActivity(new Intent(this, PersonActivity.class));
+        });
     }
 
     /**

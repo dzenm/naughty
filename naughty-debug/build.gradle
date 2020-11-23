@@ -23,6 +23,7 @@ android {
 dependencies {
     compileOnly Ext.AppCompact
     compileOnly Ext.RecyclerView
+    compileOnly Ext.Preference
     compileOnly Ext.OkHttp
     api project(":core")
     implementation project(":log")

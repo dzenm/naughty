@@ -19,11 +19,6 @@ public abstract class BaseNaughty {
      */
     protected boolean isDebug = true;
 
-    /**
-     * 是否显示通知提示
-     */
-    protected boolean isShowNotification = true;
-
     public BaseNaughty setDebug(boolean debug) {
         isDebug = debug;
         return this;
@@ -50,19 +45,4 @@ public abstract class BaseNaughty {
     public void dismiss() {
 
     }
-
-    /**
-     * @see #isShowNotification
-     */
-    public boolean isShowNotification() {
-        return isShowNotification;
-    }
-
-    /**
-     * @see #isShowNotification()
-     */
-    public void setShowNotification(boolean showNotification) {
-        isShowNotification = showNotification;
-    }
-
 }

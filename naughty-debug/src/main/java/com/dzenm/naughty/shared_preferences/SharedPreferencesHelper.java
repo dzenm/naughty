@@ -43,7 +43,7 @@ public class SharedPreferencesHelper {
         String fileName = file.getName();
         fileName = fileName.substring(0, fileName.lastIndexOf("."));
         Log.d(TAG, "SharedPreferences fileName: " + fileName);
-        return context.getSharedPreferences(fileName, Context.MODE_PRIVATE).getAll();
+        return getSharedPreferences(context, fileName).getAll();
     }
 
     /**
@@ -54,10 +54,20 @@ public class SharedPreferencesHelper {
      * @return 是否执行成功
      */
     public static boolean clear(Context context, String fileName) {
-        SharedPreferences sp = context.getSharedPreferences(fileName, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sp.edit();
+        SharedPreferences.Editor editor = getSharedPreferences(context, fileName).edit();
         editor.clear();
         return editor.commit();
+    }
+
+    /**
+     * 获取 {@link SharedPreferences} 对象
+     *
+     * @param context 上下文
+     * @param name    名称
+     * @return {@link SharedPreferences}
+     */
+    public static SharedPreferences getSharedPreferences(Context context, String name) {
+        return context.getSharedPreferences(name, Context.MODE_PRIVATE);
     }
 
     /**
@@ -69,4 +79,5 @@ public class SharedPreferencesHelper {
     private static String getSharedPreferencesDir(Context context) {
         return context.getFilesDir().getParent() + "/shared_prefs";
     }
+
 }

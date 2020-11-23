@@ -19,12 +19,14 @@ import androidx.core.app.NotificationManagerCompat;
 import com.dzenm.core.BaseInterceptor;
 import com.dzenm.naughty.Naughty;
 import com.dzenm.naughty.R;
+import com.dzenm.naughty.util.SettingUtils;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -54,6 +56,8 @@ public class HttpInterceptor extends BaseInterceptor {
     private Naughty mNaughty;
     private final Context mContext;
     private final AtomicInteger mNextRequestId = new AtomicInteger(0);
+    private NotificationManager mNotificationManager;
+    private int mNotificationLevel;
 
     public HttpInterceptor(Context context) {
         mContext = context;
@@ -66,7 +70,7 @@ public class HttpInterceptor extends BaseInterceptor {
             mNaughty = Naughty.getInstance();
         }
         Request request = chain.request();
-        if (!mNaughty.isDebug()) {
+        if (!mNaughty.isDebug() && !SettingUtils.isEnabledHttpInterceptor(mContext)) {
             return chain.proceed(request);
         }
         Log.d(TAG, "request hashCode: " + request.hashCode());
@@ -150,7 +154,7 @@ public class HttpInterceptor extends BaseInterceptor {
         bean.setFromDiskCache(response.cacheResponse() != null);
         bean.setConnectionId(connection == null ? 0 : connection.hashCode());
 
-        Map<String, String> responseHeader = new LinkedHashMap();
+        Map<String, String> responseHeader = new LinkedHashMap<>();
         Headers responseHeaders = response.headers();
         for (int i = 0, count = responseHeaders.size(); i < count; i++) {
             responseHeader.put(responseHeaders.name(i), responseHeaders.value(i));
@@ -195,7 +199,7 @@ public class HttpInterceptor extends BaseInterceptor {
         if (listener != null) {
             listener.onInterceptor(bean, mNaughty.indexOf(bean));
         }
-        if (checkNotificationEnabled(mContext) && mNaughty.isShowNotification()) {
+        if (checkNotificationEnabled(mContext) && SettingUtils.isEnabledNotification(mContext)) {
             Log.d(TAG, "show notification");
             String status = bean.getStatus();
             status = mNaughty.isHttpFinished(bean.getLoadingState()) ? status : "...";
@@ -222,25 +226,52 @@ public class HttpInterceptor extends BaseInterceptor {
      */
     private void createNotification(Context context, int id, String status, String url) {
         // 创建通知渠道实例并为它设置属性
-        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (manager == null) return;
+        if (mNotificationManager == null) {
+            mNotificationManager = (NotificationManager) context.getSystemService(
+                    Context.NOTIFICATION_SERVICE);
+        }
         String channelId = String.valueOf(id);                  // 通知渠道的ID
         Uri sound = null;                                       // 通知的声音
 
         // 构建NotificationChannel实例
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "HTTP请求";                // 用户可以看到的通知渠道的名字
-            String description = "一个HTTP请求提示的通知";  // 用户可看到的通知描述
-            NotificationChannel channel = new NotificationChannel(
-                    channelId, name, NotificationManager.IMPORTANCE_HIGH
-            );
-            channel.setDescription(description);            // 配置通知渠道的属性
-            channel.enableLights(true);                     // 设置通知出现时的闪光灯
-            channel.setLightColor(Color.RED);               // 设置通知出现的闪光灯颜色
-            channel.setSound(sound, null);   // 设置通知时的声音
-            channel.enableVibration(true);                  // 设置通知出现时的震动
-            channel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 100});
-            manager.createNotificationChannel(channel);     // 在notificationManager中创建通知渠道
+            CharSequence name = "HTTP请求";                   // 用户可以看到的通知渠道的名字
+            String description = "HTTP请求提示的通知";         // 用户可看到的通知描述
+            int level = SettingUtils.getNotificationLevel(mContext);
+            if (mNotificationLevel != level) {
+                mNotificationLevel = level;
+                List<HttpBean> data = mNaughty.get();
+                for (HttpBean bean : data) {
+                    mNotificationManager.cancel(bean.getId());
+                }
+            }
+            int importance;
+            if (mNotificationLevel == 0) {
+                importance = NotificationManager.IMPORTANCE_HIGH;
+            } else if (mNotificationLevel == 1) {
+                importance = NotificationManager.IMPORTANCE_MIN;
+            } else {
+                importance = NotificationManager.IMPORTANCE_DEFAULT;
+            }
+            Log.d(TAG, "notification importance: " + importance);
+            NotificationChannel channel = new NotificationChannel(channelId, name, importance);
+            channel.setDescription(description);                // 配置通知渠道的属性
+            channel.enableLights(true);                         // 设置通知出现时的闪光灯
+            channel.setLightColor(Color.RED);                   // 设置通知出现的闪光灯颜色
+            if (SettingUtils.isEnabledNotificationSoundAndVibration(context)) {
+                channel.setSound(sound, null);   // 设置通知时的声音
+                channel.enableVibration(true);                  // 设置通知出现时的震动
+                channel.setVibrationPattern(new long[]{0, 180, 80, 120});
+            } else {
+                channel.enableVibration(false);                 // 设置通知出现时的震动
+            }
+            channel.enableLights(true);                         // 是否开启指示灯（是否在桌面icon右上角展示小红点）
+            channel.setLightColor(Color.RED);                   // 设置指示灯颜色
+            channel.setBypassDnd(true);                         // 设置绕过免打扰模式
+            // 设置是否应在锁定屏幕上显示此频道的通知
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            channel.setShowBadge(true);                         // 设置是否在长按桌面图标时显示此渠道的通知
+            mNotificationManager.createNotificationChannel(channel);
         }
 
         // 点击通知之后要发送的广播
@@ -250,30 +281,27 @@ public class HttpInterceptor extends BaseInterceptor {
                 context, 0, intent, 0
         );
 
-        String text = status + "  " + Uri.parse(url).getPath();
-        Notification notification = new NotificationCompat.Builder(context, channelId)
-                // 设置优先级
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setAutoCancel(true)                        // 设置自动取消
-                .setSmallIcon(R.drawable.ic_network)        // 设置小图标
-                .setContentTitle("HTTP Request For Debug")  // 设置标题
-                .setContentText(text)                       // 设置内容
-                .setSound(sound)                            // 设置通知提示音, 8.0以上使用NotificationChannel设置
-                .setContentIntent(pendingIntent)            // 设置点击跳转事件
-                // 设置振动, 需要添加权限<uses-permission android:name="android.permission.VIBRATE"/>
-                .setVibrate(new long[]{0, 1000, 1000, 1000})
-                // 设置前置LED灯进行闪烁, 第一个为颜色值, 第二个为亮的时长, 第三个为暗的时长
-                .setLights(Color.GREEN, 1000, 1000)
-                .setDefaults(NotificationCompat.DEFAULT_ALL)// 使用默认效果, 根据手机当前环境播放铃声、振动
-                .setShowWhen(true)                          // 设置是否显示时间
-                .setWhen(System.currentTimeMillis())        // 设置时间
-                .build();
-        manager.notify(id, notification);
+        String title = status + "  " + Uri.parse(url).getPath();
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId);
+        builder.setPriority(NotificationCompat.PRIORITY_MAX);// 设置优先级
+        builder.setAutoCancel(true);                        // 设置自动取消
+        builder.setSmallIcon(R.drawable.ic_network);        // 设置小图标
+        // 设置标题
+        builder.setContentTitle(title);
+        builder.setContentIntent(pendingIntent);            // 设置点击跳转事件
+        if (!SettingUtils.isEnabledNotificationSoundAndVibration(context)) {
+            builder.setSound(sound);                        // 设置通知时的声音
+            // 设置振动, 需要添加权限<uses-permission android:name="android.permission.VIBRATE"/>
+            builder.setVibrate(null);
+            builder.setVibrate(new long[]{0});
+        }
+        builder.setShowWhen(true);                          // 设置是否显示时间
+        builder.setWhen(System.currentTimeMillis());        // 设置时间
+        mNotificationManager.notify(id, builder.build());
     }
 
     /**
      * 记得在AndroidManifest添加广播
-     * <service android:name="com.sd.fireelevs.core.floating.service.FloatingBroadcast" />
      */
     public static class NaughtyBroadcast extends BroadcastReceiver {
 

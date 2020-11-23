@@ -9,6 +9,22 @@
     <color name="primary_transparent_color">#DD212121</color>
     <color name="secondary_transparent_color">#CC212121</color>
 
+    <string-array name="theme_mode">
+        <item>白天模式</item>
+        <item>夜间模式</item>
+        <item>跟随系统</item>
+    </string-array>
+
+    <string-array name="floating_value">
+        <item>普通按钮</item>
+        <item>日志列表</item>
+    </string-array>
+
+    <string-array name="notification_level">
+        <item>高(弹出通知显示框)</item>
+        <item>低(不弹出通知显示框)</item>
+    </string-array>
+
     <!-- string -->
     <string name="item_close">关闭</string>
     <string name="item_clear">清除所有</string>
@@ -38,4 +54,39 @@
     <string name="dialog_request_permission_failed_title">授权失败</string>
     <string name="dialog_request_permission_failed_message">未授予悬浮窗权限, 如需继续使用悬浮窗功能, 请前往授权</string>
     <string name="dialog_request_permission_button_confirm">前往授权</string>
+
+    <string name="setting_title">设置</string>
+
+    <string name="setting_basic_preferences">基本设置</string>
+    <string name="setting_basic_dark_mode_default_value_preferences">夜间模式</string>
+    <string name="setting_basic_dark_mode_title_preferences">主题样式</string>
+    <string name="setting_basic_dark_mode_dialog_title_preferences">选择主题模式</string>
+
+    <string name="setting_floating_preferences">悬浮窗设置</string>
+    <string name="setting_floating_title_preferences">悬浮窗</string>
+    <string name="setting_floating_summary_preferences">通过悬浮框快速进入调试功能</string>
+    <string name="setting_floating_style_title_preferences">悬浮窗样式</string>
+    <string name="setting_floating_style_default_value_preferences">普通按钮</string>
+    <string name="setting_floating_style_dialog_title_preferences">选择悬浮窗样式</string>
+
+    <string name="setting_log_preferences">日志设置</string>
+    <string name="setting_log_debug_title_preferences">日志调试</string>
+    <string name="setting_log_debug_summary_preferences">调试日志的输出</string>
+    <string name="setting_log_level_title_preferences">日志打印级别</string>
+    <string name="setting_log_title_preferences">级别</string>
+
+    <string name="setting_http_preferences">HTTP设置</string>
+    <string name="setting_http_interceptor_title_preferences">HTTP拦截</string>
+    <string name="setting_http_interceptor_summary_preferences">HTTP请求进行拦截并显示请求详细信息</string>
+    <string name="setting_http_notification_title_preferences">通知</string>
+    <string name="setting_http_notification_summary_preferences">HTTP请求的通知信息</string>
+    <string name="setting_http_notification_level_title_preferences">优先级</string>
+    <string name="setting_http_notification_level_default_value_preferences">高(弹出通知显示框)</string>
+    <string name="setting_http_notification_level_dialog_title_preferences">设置通知优先级</string>
+    <string name="setting_http_notification_sound_and_vibration_title_preferences">声音和振动</string>
+    <string name="setting_http_notification_sound_and_vibration_summary_preferences">通知的声音和振动的开关</string>
+
+    <string name="setting_others_preferences">其他</string>
+    <string name="setting_others_issue_title_preferences">Issue</string>
+    <string name="setting_others_version_title_preferences">当前版本</string>
 </resources>
