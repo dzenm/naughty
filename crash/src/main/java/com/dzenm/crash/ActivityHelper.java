@@ -66,7 +66,7 @@ public class ActivityHelper {
     public void push(Activity activity) {
         if (sActivityStack.add(activity)) {
             Log.d(TAG, "add activity: " + className(activity)
-                    + ", activity stack's size is " + activitySize());
+                    + ", activity stack's size is " + size());
         } else {
             Log.e(TAG, "添加Activity失败");
         }
@@ -79,7 +79,7 @@ public class ActivityHelper {
         if (!isEmpty(sActivityStack)) {
             if (sActivityStack.remove(activity)) {
                 Log.d(TAG, "remove activity: " + className(activity)
-                        + ", activity stack's size is " + activitySize());
+                        + ", activity stack's size is " + size());
             } else {
                 Log.e(TAG, "移除失败" + activity);
             }
@@ -94,19 +94,19 @@ public class ActivityHelper {
     public Activity peek() {
         if (isEmpty(sActivityStack)) return null;
         Log.d(TAG, "get top activity: " + className(sActivityStack.lastElement())
-                + ", activity stack's size is " + activitySize());
+                + ", activity stack's size is " + size());
         return sActivityStack.lastElement();
     }
 
     /**
      * 获取指定的Activity
      */
-    public Activity getActivity(Class<?> clazz) {
+    public Activity get(Class<?> clazz) {
         if (isEmpty(sActivityStack)) return null;
         for (Activity activity : sActivityStack) {
             if (activity.getClass().equals(clazz)) {
                 Log.d(TAG, "get activity: " + clazz.getSimpleName()
-                        + ", activity stack's size is " + activitySize());
+                        + ", activity stack's size is " + size());
                 return activity;
             }
         }
@@ -116,8 +116,8 @@ public class ActivityHelper {
     /**
      * 获取所有Activity
      */
-    public Stack<Activity> getActivities() {
-        Log.d(TAG, "activity stack's size is " + activitySize());
+    public Stack<Activity> get() {
+        Log.d(TAG, "activity stack's size is " + size());
         return sActivityStack;
     }
 
@@ -128,7 +128,7 @@ public class ActivityHelper {
         if (isEmpty(sActivityStack) || activity.isFinishing()) return;
         activity.finish();
         Log.d(TAG, "finish activity: " + className(activity)
-                + ", activity stack's size is " + activitySize());
+                + ", activity stack's size is " + size());
     }
 
     /**
@@ -139,7 +139,7 @@ public class ActivityHelper {
         for (Activity activity : sActivityStack) {
             if (activity.getClass().equals(clazz)) {
                 Log.d(TAG, "finish activity: " + className(activity)
-                        + ", activity stack's size is " + activitySize());
+                        + ", activity stack's size is " + size());
                 finish(activity);
                 break;
             }
@@ -155,7 +155,7 @@ public class ActivityHelper {
             if (!activity.getClass().equals(clazz)) activity.finish();
         }
         Log.d(TAG, "finish others activity except "
-                + clazz.getSimpleName() + ", activity stack's size is " + activitySize());
+                + clazz.getSimpleName() + ", activity stack's size is " + size());
     }
 
     /**
@@ -167,7 +167,7 @@ public class ActivityHelper {
             activity.finish();
         }
         sActivityStack.clear();
-        Log.d(TAG, "finish all activity, activity stack's size is " + activitySize());
+        Log.d(TAG, "finish all activity, activity stack's size is " + size());
     }
 
     /**
@@ -184,10 +184,21 @@ public class ActivityHelper {
         }
     }
 
-    private int activitySize() {
+    /**
+     * Activity创建的数量
+     *
+     * @return Activity在栈内的数量
+     */
+    private int size() {
         return sActivityStack.size();
     }
 
+    /**
+     * 获取一个实例的类名
+     *
+     * @param clazz 类的实例
+     * @return 类的名称
+     */
     static String className(Context clazz) {
         return clazz.getClass().getSimpleName();
     }

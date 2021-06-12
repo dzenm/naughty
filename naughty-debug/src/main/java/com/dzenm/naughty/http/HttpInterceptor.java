@@ -4,7 +4,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -19,6 +18,8 @@ import androidx.core.app.NotificationManagerCompat;
 import com.dzenm.core.BaseInterceptor;
 import com.dzenm.naughty.Naughty;
 import com.dzenm.naughty.R;
+import com.dzenm.naughty.http.model.HttpBean;
+import com.dzenm.naughty.service.NaughtyBroadcast;
 import com.dzenm.naughty.util.SettingUtils;
 
 import java.io.EOFException;
@@ -26,7 +27,6 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -53,11 +53,8 @@ public class HttpInterceptor extends BaseInterceptor {
     private static final String TAG = HttpInterceptor.class.getSimpleName();
     private static final Charset UTF8 = StandardCharsets.UTF_8;
 
-    private Naughty mNaughty;
     private final Context mContext;
     private final AtomicInteger mNextRequestId = new AtomicInteger(0);
-    private NotificationManager mNotificationManager;
-    private int mNotificationLevel;
 
     public HttpInterceptor(Context context) {
         mContext = context;
@@ -66,26 +63,24 @@ public class HttpInterceptor extends BaseInterceptor {
     @NonNull
     @Override
     public Response intercept(Chain chain) throws IOException {
-        if (mNaughty == null) {
-            mNaughty = Naughty.getInstance();
-        }
         Request request = chain.request();
-        if (!mNaughty.isDebug() && !SettingUtils.isEnabledHttpInterceptor(mContext)) {
+
+        Log.d(TAG, "request hashCode: " + request.hashCode());
+        if (!Naughty.getInstance().isDebug() && !SettingUtils.isEnabledHttpInterceptor(mContext)) {
             return chain.proceed(request);
         }
-        Log.d(TAG, "request hashCode: " + request.hashCode());
 
         // 保存请求及返回的数据
         HttpBean bean = new HttpBean();
-        mNaughty.add(bean);
+        Naughty.getInstance().add(bean);
 
         // 请求的ID
         bean.setId(mNextRequestId.getAndIncrement());
-
         // 请求开始的时间及状态
         bean.setCurrentTime(String.valueOf(System.currentTimeMillis()));
-        bean.setLoadingState(Naughty.START);
-        setRequestState(bean);
+
+        //=======================================开始请求============================================
+        updateRequestState(bean, Naughty.START);
 
         // 请求内容
         RequestBody requestBody = request.body();
@@ -125,9 +120,8 @@ public class HttpInterceptor extends BaseInterceptor {
             }
         }
 
-        // 等待响应
-        bean.setLoadingState(Naughty.RUNNING);
-        setRequestState(bean);
+        //=======================================等待响应============================================
+        updateRequestState(bean, Naughty.RUNNING);
 
         Response response;
         long tookMs;
@@ -138,8 +132,8 @@ public class HttpInterceptor extends BaseInterceptor {
             tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
             bean.setTime(String.valueOf(tookMs));
             bean.setResponseBody(e.getMessage());
-            bean.setLoadingState(Naughty.STOP);
-            setRequestState(bean);
+            //=======================================请求异常========================================
+            updateRequestState(bean, Naughty.STOP);
             throw e;
         }
 
@@ -184,52 +178,41 @@ public class HttpInterceptor extends BaseInterceptor {
             }
         }
 
-        bean.setLoadingState(Naughty.STOP);
-        setRequestState(bean);
+        //=======================================请求结束============================================
+        updateRequestState(bean, Naughty.STOP);
         return response;
     }
 
     /**
-     * 设置请求的状态
+     * 更新请求的状态
      *
-     * @param bean 请求保存的数据
+     * @param bean  请求保存的数据
+     * @param state 请求的状态
      */
-    private void setRequestState(HttpBean bean) {
-        Naughty.OnRequestListener listener = mNaughty.getOnRequestListener();
-        if (listener != null) {
-            listener.onInterceptor(bean, mNaughty.indexOf(bean));
-        }
-        if (checkNotificationEnabled(mContext) && SettingUtils.isEnabledNotification(mContext)) {
+    private void updateRequestState(HttpBean bean, int state) {
+        bean.setLoadingState(state);
+        Naughty.getInstance().update(bean);
+        // 检查通知权限是否打开, 通知开关是否打开
+        if (NotificationManagerCompat.from(mContext).areNotificationsEnabled()
+                && SettingUtils.isEnabledNotification(mContext)) {
             Log.d(TAG, "show notification");
-            String status = bean.getStatus();
-            status = mNaughty.isHttpFinished(bean.getLoadingState()) ? status : "...";
-            createNotification(mContext, bean.getId(), status, bean.getRequestUrl());
+            String status = Naughty.getInstance().isHttpFinished(bean.getLoadingState())
+                    ? bean.getStatus() : "...";
+            String title = status + "  " + Uri.parse(bean.getRequestUrl()).getPath();
+            createNotification(mContext, bean.getId(), title);
         }
-    }
-
-    /**
-     * 检查是否打开通知开关
-     *
-     * @param context 上下文
-     * @return 是否打开通知开关
-     */
-    private boolean checkNotificationEnabled(Context context) {
-        return NotificationManagerCompat.from(context).areNotificationsEnabled();
     }
 
     /**
      * 创建一条新的通知
      *
-     * @param id     通知的ID
-     * @param status 通知显示的状态
-     * @param url    通知显示的URL
+     * @param id    通知的ID
+     * @param title 通知显示的标题
      */
-    private void createNotification(Context context, int id, String status, String url) {
+    private void createNotification(Context context, int id, String title) {
         // 创建通知渠道实例并为它设置属性
-        if (mNotificationManager == null) {
-            mNotificationManager = (NotificationManager) context.getSystemService(
-                    Context.NOTIFICATION_SERVICE);
-        }
+        NotificationManager manager = (NotificationManager) context.getSystemService(
+                Context.NOTIFICATION_SERVICE);
         String channelId = String.valueOf(id);                  // 通知渠道的ID
         Uri sound = null;                                       // 通知的声音
 
@@ -237,18 +220,11 @@ public class HttpInterceptor extends BaseInterceptor {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = "HTTP请求";                   // 用户可以看到的通知渠道的名字
             String description = "HTTP请求提示的通知";         // 用户可看到的通知描述
-            int level = SettingUtils.getNotificationLevel(mContext);
-            if (mNotificationLevel != level) {
-                mNotificationLevel = level;
-                List<HttpBean> data = mNaughty.get();
-                for (HttpBean bean : data) {
-                    mNotificationManager.cancel(bean.getId());
-                }
-            }
+            int level = SettingUtils.getNotificationLevel(context);
             int importance;
-            if (mNotificationLevel == 0) {
+            if (level == 0) {
                 importance = NotificationManager.IMPORTANCE_HIGH;
-            } else if (mNotificationLevel == 1) {
+            } else if (level == 1) {
                 importance = NotificationManager.IMPORTANCE_MIN;
             } else {
                 importance = NotificationManager.IMPORTANCE_DEFAULT;
@@ -271,17 +247,16 @@ public class HttpInterceptor extends BaseInterceptor {
             // 设置是否应在锁定屏幕上显示此频道的通知
             channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             channel.setShowBadge(true);                         // 设置是否在长按桌面图标时显示此渠道的通知
-            mNotificationManager.createNotificationChannel(channel);
+            manager.createNotificationChannel(channel);
         }
 
         // 点击通知之后要发送的广播
         Intent intent = new Intent(context, NaughtyBroadcast.class);
-        intent.setAction(NaughtyBroadcast.ACTION_NOTIFICATION);
+        intent.setAction(NaughtyBroadcast.NAUGHTY_ACTION_NOTIFICATION);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 context, 0, intent, 0
         );
 
-        String title = status + "  " + Uri.parse(url).getPath();
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId);
         builder.setPriority(NotificationCompat.PRIORITY_MAX);// 设置优先级
         builder.setAutoCancel(true);                        // 设置自动取消
@@ -297,28 +272,7 @@ public class HttpInterceptor extends BaseInterceptor {
         }
         builder.setShowWhen(true);                          // 设置是否显示时间
         builder.setWhen(System.currentTimeMillis());        // 设置时间
-        mNotificationManager.notify(id, builder.build());
-    }
-
-    /**
-     * 记得在AndroidManifest添加广播
-     */
-    public static class NaughtyBroadcast extends BroadcastReceiver {
-
-        /**
-         * 为了Notification更新信息
-         */
-        public static final String ACTION_NOTIFICATION = "action_notification";
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (action != null) {
-                if (action.equals(ACTION_NOTIFICATION)) {
-                    Naughty.startActivity(context);
-                }
-            }
-        }
+        manager.notify(id, builder.build());
     }
 
     /**

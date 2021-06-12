@@ -9,10 +9,9 @@ import androidx.annotation.NonNull;
 import com.dzenm.log.LogHelper;
 import com.dzenm.naughty.R;
 import com.dzenm.naughty.base.BaseAdapter;
-import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
 
-public class LogItemAdapter extends BaseAdapter<String> {
+public class LogAdapter extends BaseAdapter<String> {
 
     @Override
     protected View getView() {
@@ -36,7 +35,7 @@ public class LogItemAdapter extends BaseAdapter<String> {
                 int index = log.indexOf("):");
                 if (index != -1) {
                     String text = log.substring(index + 2);
-                    Utils.copy(context, text);
+                    ViewUtils.copy(context, text);
                     Toast.makeText(context, context.getString(R.string.toast_copy_text) + text,
                             Toast.LENGTH_SHORT
                     ).show();

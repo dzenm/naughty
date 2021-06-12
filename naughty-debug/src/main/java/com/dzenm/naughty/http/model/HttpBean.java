@@ -1,15 +1,19 @@
-package com.dzenm.naughty.http;
+package com.dzenm.naughty.http.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
 
-import com.dzenm.naughty.util.Utils;
+import com.dzenm.naughty.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * @author dzenm
+ * 2020/8/4
+ */
 public class HttpBean implements Parcelable {
 
     private int id = 0;
@@ -42,7 +46,7 @@ public class HttpBean implements Parcelable {
     }
 
     public String getCurrentTime() {
-        return TextUtils.isEmpty(currentTime) ? "00:00:00 SSS" : Utils.format(currentTime);
+        return TextUtils.isEmpty(currentTime) ? "00:00:00 SSS" : StringUtils.formatDate(currentTime);
     }
 
     public void setCurrentTime(String currentTime) {
@@ -83,7 +87,7 @@ public class HttpBean implements Parcelable {
 
     public String getRequestSize() {
         long size = TextUtils.isEmpty(requestSize) ? 0 : Long.parseLong(requestSize);
-        return Utils.formatFileSize(size);
+        return StringUtils.formatFileSize(size);
     }
 
     public void setRequestSize(String requestSize) {
@@ -138,7 +142,7 @@ public class HttpBean implements Parcelable {
 
     public String getResponseSize() {
         long size = TextUtils.isEmpty(responseSize) ? 0 : Long.parseLong(responseSize);
-        return Utils.formatFileSize(size);
+        return StringUtils.formatFileSize(size);
     }
 
     public void setResponseSize(String responseSize) {
@@ -274,6 +278,4 @@ public class HttpBean implements Parcelable {
             return new HttpBean[size];
         }
     };
-
-
 }

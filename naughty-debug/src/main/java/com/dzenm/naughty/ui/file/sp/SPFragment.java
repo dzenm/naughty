@@ -1,4 +1,4 @@
-package com.dzenm.naughty.ui.file;
+package com.dzenm.naughty.ui.file.sp;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -11,8 +11,8 @@ import androidx.annotation.Nullable;
 import androidx.core.widget.NestedScrollView;
 
 import com.dzenm.naughty.base.BaseFragment;
-import com.dzenm.naughty.shared_preferences.SharedPreferencesHelper;
-import com.dzenm.naughty.ui.MainModelActivity;
+import com.dzenm.naughty.sp.SharedPreferencesHelper;
+import com.dzenm.naughty.ui.MainActivity;
 import com.dzenm.naughty.util.ViewUtils;
 
 import java.io.File;
@@ -24,16 +24,18 @@ import java.util.Map;
  * <p>
  * 显示单个 SharedPreferences 详细数据页面
  */
-public class ItemFragment extends BaseFragment<MainModelActivity> {
+public class SPFragment extends BaseFragment<MainActivity> {
 
     private String mFileData;
     private Map<String, ?> data;
 
-    public static ItemFragment newInstance(String data) {
-        ItemFragment fragment = new ItemFragment();
-        Bundle bundle = new Bundle();
-        bundle.putString(BUNDLE_DATA, data);
-        fragment.setArguments(bundle);
+    public static SPFragment newInstance(String data) {
+        SPFragment fragment = new SPFragment();
+        if (data != null) {
+            Bundle bundle = new Bundle();
+            bundle.putString(BUNDLE_DATA, data);
+            fragment.setArguments(bundle);
+        }
         return fragment;
     }
 
@@ -44,16 +46,18 @@ public class ItemFragment extends BaseFragment<MainModelActivity> {
         Bundle bundle = getArguments();
         if (bundle != null) {
             mFileData = bundle.getString(BUNDLE_DATA);
-            data = SharedPreferencesHelper.getSharedPreferenceValue(mActivity, new File(mFileData));
+            if (mFileData != null) {
+                data = SharedPreferencesHelper.getSharedPreferenceValue(mActivity, new File(mFileData));
+            }
         }
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container) {
-        LinearLayout parent = ViewUtils.createDecorView(mActivity, inflater, null, mFileData);
-        NestedScrollView scrollView = ViewUtils.newScrollView(mActivity);
-        LinearLayout content = ViewUtils.newDecorView(mActivity);
+        LinearLayout parent = ViewUtils.createDecorView(mActivity, true, null, mFileData);
+        NestedScrollView scrollView = ViewUtils.createScrollView(mActivity);
+        LinearLayout content = ViewUtils.createRootView(mActivity);
 
         for (Map.Entry<String, ?> map : data.entrySet()) {
             String key = map.getKey();

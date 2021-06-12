@@ -1,5 +1,6 @@
 package com.dzenm.naughty.ui;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
@@ -10,58 +11,70 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.dzenm.naughty.Naughty;
-import com.dzenm.naughty.NaughtyService;
 import com.dzenm.naughty.R;
-import com.dzenm.naughty.ui.http.ListFragment;
+import com.dzenm.naughty.service.NaughtyService;
+import com.dzenm.naughty.ui.http.HttpFragment;
 import com.dzenm.naughty.util.SettingUtils;
-import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
 
-public class MainModelActivity extends AppCompatActivity {
+/**
+ * @author dzenm
+ * 2020/8/4
+ */
+public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = MainModelActivity.class.getSimpleName();
+    private static final String TAG = MainActivity.class.getSimpleName();
+
+    private int mFrameLayoutId;
+
+    /**
+     * 悬浮窗权限请求回调状态码
+     */
     private static final int REQUEST_FLOATING = 0xF1;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(createView());
+        mFrameLayoutId = View.generateViewId();
+        setContentView(ViewUtils.createDecorView(this, mFrameLayoutId));
         Log.d(TAG, "onCreate task id: " + getTaskId());
 
-        getDelegate().setLocalNightMode(loadThemeMode(SettingUtils.getThemeMode(this)));
+        //getDelegate().setLocalNightMode(loadThemeMode(SettingUtils.getThemeMode(this)));
 
-        Window window = getWindow();
-        // 添加状态栏背景可绘制模式
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        // 清除原有的状态栏半透明状态
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        window.setStatusBarColor(ViewUtils.resolveColor(this, R.attr.colorPrimary));
+        setStatusBarStyle();
 
         checkServiceWithEnabled(this);
 
-        Utils.clearStack(getSupportFragmentManager());
-        Utils.switchFragment(getSupportFragmentManager(), null, ListFragment.newInstance());
+        Fragment fragment = getSupportFragmentManager()
+                .findFragmentByTag(HttpFragment.class.getName());
+        clearStack();
+
+        switchFragment(null, savedInstanceState == null || fragment == null
+                        ? HttpFragment.newInstance(Naughty.getInstance().get())
+                        : fragment);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        Naughty.getInstance().onChanged(false);
+        Naughty.getInstance().isVisible(false);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        Naughty.getInstance().onChanged(true);
+        Naughty.getInstance().isVisible(true);
     }
 
     @Override
@@ -81,6 +94,18 @@ public class MainModelActivity extends AppCompatActivity {
     }
 
     /**
+     * 设置状态栏样式
+     */
+    private void setStatusBarStyle() {
+        Window window = getWindow();
+        // 添加状态栏背景可绘制模式
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        // 清除原有的状态栏半透明状态
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.setStatusBarColor(ViewUtils.resolveColor(this, R.attr.colorPrimary));
+    }
+
+    /**
      * 权限请求回调结果, 如果已经授予权限, 开启后台服务, 如果未授权, 将会继续提示授权
      *
      * @param requestCode 请求的回调标识
@@ -91,21 +116,12 @@ public class MainModelActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_FLOATING && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (Utils.checkOverlaysPermission(this)) {
+            if (checkOverlaysPermission(this)) {
                 startService(new Intent(this, NaughtyService.class));
             } else {
                 checkServiceWithEnabled(this);
             }
         }
-    }
-
-    private View createView() {
-        FrameLayout frameLayout = new FrameLayout(this);
-        frameLayout.setLayoutParams(new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
-        ));
-        frameLayout.setId(R.id.frame_layout_id);
-        return frameLayout;
     }
 
     /**
@@ -119,8 +135,9 @@ public class MainModelActivity extends AppCompatActivity {
             super.finish();
         } else {
             final FragmentManager manager = getSupportFragmentManager();
-            if (manager.getBackStackEntryCount() > 1) {
-                manager.popBackStackImmediate();
+            int size = manager.getBackStackEntryCount();
+            if (size > 1) {
+                manager.popBackStack();
             } else {
                 moveTaskToBack(true);
                 overridePendingTransition(R.anim.slide_left_in, R.anim.slide_right_out);
@@ -147,17 +164,19 @@ public class MainModelActivity extends AppCompatActivity {
      * @param activity 上下文
      */
     private void checkServiceWithEnabled(final AppCompatActivity activity) {
-        if (Naughty.getInstance().isCreated || Build.VERSION.SDK_INT < Build.VERSION_CODES.M
-                || !SettingUtils.isEnabledFloating(this))
+        if (Naughty.getInstance().isCreatedService
+                || Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+                || !SettingUtils.isEnabledFloating(activity))
             return;
 
-        if (Utils.checkOverlaysPermission(activity)) {
+        if (checkOverlaysPermission(activity)) {
             startService(new Intent(activity, NaughtyService.class));
         } else {
             new AlertDialog.Builder(activity)
                     .setTitle(activity.getString(R.string.dialog_request_permission_failed_title))
                     .setMessage(activity.getString(R.string.dialog_request_permission_failed_message))
                     .setPositiveButton(activity.getString(R.string.dialog_request_permission_button_confirm), new DialogInterface.OnClickListener() {
+                        @RequiresApi(api = Build.VERSION_CODES.M)
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
@@ -175,5 +194,54 @@ public class MainModelActivity extends AppCompatActivity {
                     .create()
                     .show();
         }
+    }
+
+    /**
+     * 切换Fragment
+     *
+     * @param current 当前所在的Fragment, 即需要隐藏的Fragment
+     * @param target  目标Fragment, 即需要切换的Fragment
+     */
+    public void switchFragment(Fragment current, Fragment target) {
+        FragmentManager manager = getSupportFragmentManager();
+        FragmentTransaction action = manager.beginTransaction();
+        String className = target.getClass().getName();
+        Fragment alreadyFragment = manager.findFragmentByTag(className);
+        if (alreadyFragment != null) {
+            action.remove(alreadyFragment);
+        }
+        action.add(mFrameLayoutId, target, className)
+                .setCustomAnimations(
+                        R.anim.slide_right_in, R.anim.slide_left_out,
+                        R.anim.slide_left_in, R.anim.slide_right_out
+                ).addToBackStack(className);
+        if (current != null) {
+            action.hide(current);
+        }
+        action.show(target).commit();
+    }
+
+    /**
+     * 清空Fragment栈
+     */
+    public void clearStack() {
+        FragmentManager manager = getSupportFragmentManager();
+        int count = manager.getBackStackEntryCount();
+        for (int i = 0; i < count; ++i) {
+            manager.popBackStack();
+        }
+    }
+
+    /**
+     * 检查悬浮窗开启权限
+     *
+     * @param context 上下文
+     * @return 是否开启悬浮窗权限
+     */
+    public static boolean checkOverlaysPermission(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return Settings.canDrawOverlays(context);
+        }
+        return true;
     }
 }

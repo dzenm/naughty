@@ -19,13 +19,14 @@ import androidx.preference.SwitchPreferenceCompat;
 
 import com.dzenm.naughty.BuildConfig;
 import com.dzenm.naughty.R;
-import com.dzenm.naughty.ui.MainModelActivity;
+import com.dzenm.naughty.ui.MainActivity;
 import com.dzenm.naughty.util.ViewUtils;
 
 public class SettingFragment extends PreferenceFragmentCompat implements Preference.OnPreferenceChangeListener {
 
-    public static final String SETTING_PREFERENCES = "naughty_setting_preferences";
     private static final String TAG = SettingFragment.class.getSimpleName();
+
+    public static final String SETTING_PREFERENCES = "naughty_setting_preferences";
 
     public static final String KEY_THEME_MODE = "theme_mode";
 
@@ -42,7 +43,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements Prefere
     public static final String KEY_OTHERS_ISSUE = "issue_address";
     public static final String KEY_OTHERS_VERSION = "current_version";
 
-    private MainModelActivity mActivity;
+    private MainActivity mActivity;
     private ListPreference mThemeMode;
     private SwitchPreferenceCompat mFloatingState;
     private ListPreference mFloatingStyle;
@@ -61,7 +62,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements Prefere
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        mActivity = (MainModelActivity) getActivity();
+        mActivity = (MainActivity) getActivity();
         // 配置 SharedPreferences 名称, 必须在 setPreferencesFromResource() 之前设置
         getPreferenceManager().setSharedPreferencesName(SETTING_PREFERENCES);
 
@@ -74,7 +75,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements Prefere
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        LinearLayout parent = ViewUtils.createDecorView(mActivity, inflater,
+        LinearLayout parent = ViewUtils.createDecorView(mActivity, true,
                 null, getText(R.string.setting_title));
         parent.addView(super.onCreateView(inflater, container, savedInstanceState));
 
@@ -82,6 +83,9 @@ public class SettingFragment extends PreferenceFragmentCompat implements Prefere
         return parent;
     }
 
+    /**
+     * 初始化数据
+     */
     private void initData() {
         final String githubUrl = "https://github.com/dzenm/naughty";
         mIssue.setSummary(githubUrl);

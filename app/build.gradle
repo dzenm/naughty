@@ -4,7 +4,7 @@ android {
     compileSdkVersion Ext.compileSdkVersion
     buildToolsVersion Ext.buildToolsVersion
     defaultConfig {
-        applicationId "com.example"
+        applicationId "com.dzenm"
         minSdkVersion Ext.minSdkVersion
         targetSdkVersion Ext.targetSdkVersion
         versionCode 1
@@ -36,11 +36,14 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
+    implementation Ext.coreKtx
+    implementation Ext.ktLib
     implementation Ext.RecyclerView
     implementation Ext.OkHttp
+    implementation Ext.litePal
     debugImplementation project(":naughty-debug")
     releaseImplementation project(":naughty-release")
-//    releaseImplementation 'com.github.dzenm.naughty:naughty-release:1.5.4'
-//    debugImplementation 'com.github.dzenm.naughty:naughty-debug:1.5.4'
+//    releaseImplementation 'com.github.dzenm.naughty:naughty-release:1.5.7'
+//    debugImplementation 'com.github.dzenm.naughty:naughty-debug:1.5.7'
 
 }

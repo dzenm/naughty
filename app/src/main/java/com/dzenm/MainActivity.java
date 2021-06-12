@@ -6,12 +6,14 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
-import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.dzenm.crash.ActivityHelper;
 import com.dzenm.naughty.Naughty;
+import com.dzenm.naughty.util.StringUtils;
+import com.dzenm.naughty.view.JSONViewAdapter;
 
 import java.io.IOException;
 
@@ -24,7 +26,8 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
 
     public static final String TAG = MainActivity.class.getSimpleName();
-    private TextView textView;
+    private RecyclerView textView;
+    private JSONViewAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +41,9 @@ public class MainActivity extends AppCompatActivity {
         editor.putString("this is test", "test");
         editor.apply();
 
-        textView = findViewById(R.id.text);
+        textView = findViewById(R.id.recycler_view);
+        adapter = new JSONViewAdapter(this);
+        textView.setAdapter(adapter);
 
         Button request = findViewById(R.id.btn_request);
         Button crash = findViewById(R.id.btn_crash);
@@ -74,12 +79,12 @@ public class MainActivity extends AppCompatActivity {
             public void onResponse(Call call, Response response) throws IOException {
                 String string = response.body().string();
                 Log.d(TAG, "onResponse: " + string);
-                updateText("onResponse: " + string);
+                updateText(string);
             }
         });
     }
 
     private void updateText(String text) {
-        runOnUiThread(() -> textView.setText(text));
+        runOnUiThread(() -> adapter.bindData(StringUtils.formatJson(text)));
     }
 }

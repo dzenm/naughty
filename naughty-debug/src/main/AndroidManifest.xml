@@ -5,15 +5,15 @@
 
     <application>
         <activity
-            android:name=".ui.MainModelActivity"
+            android:name=".ui.MainActivity"
             android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".NaughtyService" />
-        <receiver android:name=".http.HttpInterceptor$NaughtyBroadcast" />
+        <service android:name=".service.NaughtyService" />
+        <receiver android:name=".service.NaughtyBroadcast" />
     </application>
 
 </manifest>

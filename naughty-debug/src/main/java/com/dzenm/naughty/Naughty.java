@@ -2,7 +2,7 @@ package com.dzenm.naughty;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,12 +15,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.dzenm.core.BaseNaughty;
 import com.dzenm.log.LogHelper;
-import com.dzenm.naughty.http.HttpBean;
+import com.dzenm.naughty.http.model.HttpBean;
 import com.dzenm.naughty.http.HttpInterceptor;
-import com.dzenm.naughty.ui.MainModelActivity;
-import com.dzenm.naughty.ui.log.LogItemAdapter;
+import com.dzenm.naughty.service.NaughtyBroadcast;
+import com.dzenm.naughty.service.NaughtyService;
+import com.dzenm.naughty.ui.log.LogAdapter;
 import com.dzenm.naughty.util.SettingUtils;
-import com.dzenm.naughty.util.Utils;
 import com.dzenm.naughty.util.ViewUtils;
 
 import java.util.ArrayList;
@@ -42,8 +42,19 @@ public class Naughty extends BaseNaughty implements View.OnClickListener {
 
     private static final String TAG = Naughty.class.getSimpleName();
 
+    /**
+     * HTTP请求开始 {@link HttpInterceptor#intercept(Interceptor.Chain)}
+     */
     public static final int START = 1;
+
+    /**
+     * HTTP正在请求中 {@link HttpInterceptor#intercept(Interceptor.Chain)}
+     */
     public static final int RUNNING = 2;
+
+    /**
+     * HTTP请求结束 {@link HttpInterceptor#intercept(Interceptor.Chain)}
+     */
     public static final int STOP = 3;
 
     @SuppressLint("StaticFieldLeak")
@@ -57,7 +68,7 @@ public class Naughty extends BaseNaughty implements View.OnClickListener {
     /**
      * Service是否已经创建
      */
-    public boolean isCreated = false;
+    public boolean isCreatedService = false;
 
     /**
      * 悬浮窗配置参数
@@ -78,7 +89,7 @@ public class Naughty extends BaseNaughty implements View.OnClickListener {
     /**
      * 设置悬浮窗的大小
      */
-    private int mWidth = -1, mHeight = -1;
+    private int mFloatingWidth = -1, mFloatingHeight = -1;
 
     /**
      * 请求的数据
@@ -123,6 +134,17 @@ public class Naughty extends BaseNaughty implements View.OnClickListener {
     }
 
     /**
+     * 更新数据
+     *
+     * @param bean 更新的数据内容
+     */
+    public void update(HttpBean bean) {
+        if (mOnRequestListener != null) {
+            mOnRequestListener.onInterceptor(bean, indexOf(bean));
+        }
+    }
+
+    /**
      * 获取数据所在的位置
      *
      * @param bean 查找需要的数据
@@ -138,7 +160,7 @@ public class Naughty extends BaseNaughty implements View.OnClickListener {
      * @param width 悬浮窗的宽度(默认为屏幕的3/8)
      */
     public void setWidth(int width) {
-        this.mWidth = width;
+        this.mFloatingWidth = width;
     }
 
     /**
@@ -147,7 +169,15 @@ public class Naughty extends BaseNaughty implements View.OnClickListener {
      * @param height 悬浮窗的高度(默认为宽度的3/4)
      */
     public void setHeight(int height) {
-        this.mHeight = height;
+        this.mFloatingHeight = height;
+    }
+
+    public void setOnRequestListener(OnRequestListener listener) {
+        mOnRequestListener = listener;
+    }
+
+    public void setIFloatingView(IFloatingView floatingView) {
+        this.mIFloatingView = floatingView;
     }
 
     /**
@@ -155,31 +185,6 @@ public class Naughty extends BaseNaughty implements View.OnClickListener {
      */
     public void clear() {
         mData.clear();
-    }
-
-    @Override
-    public void show() {
-        if (isCreated && SettingUtils.isEnabledFloating(mService)) {
-            if (!isShowing && mWindowManager != null && mDecorView != null) {
-                int index = SettingUtils.getFloatingStyle(mService);
-                if (index != mFloatingStyle) {
-                    mFloatingStyle = index;
-                    recreateView(mService);
-                }
-                isShowing = true;
-                mWindowManager.addView(mDecorView, mLayoutParams);
-            }
-        }
-    }
-
-    @Override
-    public void dismiss() {
-        if (isCreated && SettingUtils.isEnabledFloating(mService)) {
-            if (isShowing && mWindowManager != null && mDecorView != null) {
-                isShowing = false;
-                mWindowManager.removeView(mDecorView);
-            }
-        }
     }
 
     /**
@@ -195,45 +200,45 @@ public class Naughty extends BaseNaughty implements View.OnClickListener {
     /**
      * 如果不在悬浮窗点击进入的Activity里, 将会改变悬浮窗的状态
      *
-     * @param isShowing 悬浮窗是否显示
+     * @param visible 悬浮窗是否可见
      */
-    public void onChanged(boolean isShowing) {
-        if (isShowing) {
-            show();
+    public void isVisible(boolean visible) {
+        if (!isShowFloatingView()) return;
+        Log.d(TAG, "naughty floating view is visible: " + visible);
+        if (visible) {
+            int index = SettingUtils.getFloatingStyle(mService);
+            if (index != mFloatingStyle) {
+                mFloatingStyle = index;
+                recreateView(mService);
+            }
+            mWindowManager.addView(mDecorView, mLayoutParams);
         } else {
-            dismiss();
+            mWindowManager.removeView(mDecorView);
         }
     }
 
-    public OnRequestListener getOnRequestListener() {
-        return mOnRequestListener;
-    }
-
-    public void setOnRequestListener(OnRequestListener listener) {
-        this.mOnRequestListener = listener;
-    }
-
-    public void setIFloatingView(IFloatingView floatingView) {
-        this.mIFloatingView = floatingView;
+    private boolean isShowFloatingView() {
+        return isCreatedService
+                && SettingUtils.isEnabledFloating(mService)
+                && mWindowManager != null
+                && mDecorView != null;
     }
 
     @SuppressLint("ClickableViewAccessibility")
     public void onCreate(NaughtyService service) {
         this.mService = service;
-        isCreated = true;
+        isCreatedService = true;
 
-        if (Utils.checkOverlaysPermission(service)) {
-            mWindowManager = (WindowManager) service.getSystemService(Context.WINDOW_SERVICE);
-            mLayoutParams = ViewUtils.createFloatingLogModelViewParams();
+        mWindowManager = (WindowManager) service.getSystemService(Context.WINDOW_SERVICE);
+        mLayoutParams = ViewUtils.createFloatingLogModelViewParams();
 
-            mDecorView = new FrameLayout(mService);
-            mDecorView.setLayoutParams(new FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT
-            ));
-            mFloatingStyle = SettingUtils.getFloatingStyle(mService);
-            recreateView(service);
-            mDecorView.setOnTouchListener(new FloatingTouchListener());
-        }
+        mDecorView = new FrameLayout(mService);
+        mDecorView.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT
+        ));
+        mFloatingStyle = SettingUtils.getFloatingStyle(mService);
+        recreateView(service);
+        mDecorView.setOnTouchListener(new FloatingTouchListener());
     }
 
     private void recreateView(NaughtyService service) {
@@ -243,15 +248,15 @@ public class Naughty extends BaseNaughty implements View.OnClickListener {
                 mDecorView.addView(ViewUtils.createFloatingView(service));
                 mDecorView.setOnClickListener(this);
             } else if (mFloatingStyle == 1) {
-                if (mWidth == -1) {
-                    mWidth = ViewUtils.getWidth() * 3 / 8;
+                if (mFloatingWidth == -1) {
+                    mFloatingWidth = ViewUtils.getWidth() * 3 / 8;
                 }
-                if (mHeight == -1) {
-                    mHeight = mWidth * 4 / 3;
+                if (mFloatingHeight == -1) {
+                    mFloatingHeight = mFloatingWidth * 4 / 3;
                 }
 
-                final LogItemAdapter adapter = new LogItemAdapter();
-                mDecorView.addView(ViewUtils.createFloatingLogModel(service, adapter, mWidth, mHeight));
+                final LogAdapter adapter = new LogAdapter();
+                mDecorView.addView(ViewUtils.createFloatingLogModel(service, adapter, mFloatingWidth, mFloatingHeight));
 
                 final LinearLayout parent = (LinearLayout) mDecorView.getChildAt(0);
                 final LinearLayout titleLayout = (LinearLayout) parent.getChildAt(0);
@@ -284,27 +289,15 @@ public class Naughty extends BaseNaughty implements View.OnClickListener {
 
     @Override
     public void onClick(View v) {
-        startActivity(mService);
+        NaughtyBroadcast.startActivity(mService);
     }
 
     public void onDestroy() {
-        isCreated = false;
+        isCreatedService = false;
         mService = null;
-        isShowing = false;
         mWindowManager = null;
         mLayoutParams = null;
         mDecorView = null;
-    }
-
-    /**
-     * 启动FloatingActivity
-     *
-     * @param context 上下文
-     */
-    public static void startActivity(Context context) {
-        Intent intent = new Intent(context, MainModelActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
     }
 
     /**

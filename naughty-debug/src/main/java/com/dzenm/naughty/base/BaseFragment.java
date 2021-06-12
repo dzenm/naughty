@@ -1,5 +1,6 @@
 package com.dzenm.naughty.base;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +10,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
+import com.dzenm.naughty.R;
 
 /**
  * @author dzenm
@@ -25,9 +30,10 @@ public abstract class BaseFragment<T extends AppCompatActivity> extends Fragment
     }
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        mActivity = (T) getActivity();
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        // 防止 getActivity() 空指针异常
+        mActivity = (T) context;
     }
 
     @Override

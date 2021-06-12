@@ -9,13 +9,14 @@ import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.core.widget.NestedScrollView;
 
-import com.dzenm.naughty.R;
 import com.dzenm.naughty.base.BaseFragment;
-import com.dzenm.naughty.http.HttpBean;
-import com.dzenm.naughty.ui.MainModelActivity;
+import com.dzenm.naughty.http.model.HttpBean;
+import com.dzenm.naughty.ui.MainActivity;
+import com.dzenm.naughty.util.Colors;
 import com.dzenm.naughty.util.Dimens;
-import com.dzenm.naughty.util.Utils;
+import com.dzenm.naughty.util.StringUtils;
 import com.dzenm.naughty.util.ViewUtils;
+import com.dzenm.naughty.view.JSONViewAdapter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +26,7 @@ import java.util.Map;
  * <p>
  * 显示单个Http请求
  */
-public class TabFragment extends BaseFragment<MainModelActivity> {
+public class TabFragment extends BaseFragment<MainActivity> {
 
     static final int BUNDLE_REQUEST = 1;
     static final int BUNDLE_RESPONSE = 2;
@@ -34,6 +35,8 @@ public class TabFragment extends BaseFragment<MainModelActivity> {
      * 保存的需要显示的数据
      */
     private Map<String, String> data = new HashMap<>();
+
+    private int which;
 
     /**
      * Use this factory method to create a new instance of
@@ -56,8 +59,8 @@ public class TabFragment extends BaseFragment<MainModelActivity> {
         Bundle bundle = getArguments();
         if (bundle != null) {
             HttpBean bean = bundle.getParcelable(BUNDLE_DATA);
+            which = bundle.getInt(BUNDLE_FLAG);
             if (bean != null) {
-                int which = bundle.getInt(BUNDLE_FLAG);
                 if (which == BUNDLE_REQUEST) {
                     data = bean.getRequest();
                 } else if (which == BUNDLE_RESPONSE) {
@@ -70,11 +73,11 @@ public class TabFragment extends BaseFragment<MainModelActivity> {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container) {
         // 根布局
-        NestedScrollView scrollView = ViewUtils.newScrollView(mActivity);
-        LinearLayout parent = ViewUtils.newDecorView(mActivity);
+        NestedScrollView scrollView = ViewUtils.createScrollView(mActivity);
+        LinearLayout parent = ViewUtils.createRootView(mActivity);
 
         parent.addView(ViewUtils.newSubtitle(mActivity, Dimens.PADDING_8, "Headers"));
-        parent.addView(ViewUtils.newDivide(mActivity, R.color.divide_color));
+        parent.addView(ViewUtils.newDivide(mActivity, Colors.COLOR_DIVIDE));
         for (Map.Entry<String, String> map : data.entrySet()) {
             String key = map.getKey();
             String value = map.getValue();
@@ -88,14 +91,11 @@ public class TabFragment extends BaseFragment<MainModelActivity> {
         }
 
         parent.addView(ViewUtils.newSubtitle(mActivity, Dimens.PADDING_8, "Body"));
-        parent.addView(ViewUtils.newDivide(mActivity, R.color.divide_color));
-        Bundle bundle = getArguments();
-        if (bundle != null) {
-            int which = bundle.getInt(BUNDLE_FLAG);
-            String value = which != BUNDLE_REQUEST ? data.get("Response Body") : data.get("Request Body");
-            if (value != null) {
-                parent.addView(ViewUtils.newBodyView(mActivity, Utils.formatJson(value)));
-            }
+        parent.addView(ViewUtils.newDivide(mActivity, Colors.COLOR_DIVIDE));
+
+        String value = which != BUNDLE_REQUEST ? data.get("Response Body") : data.get("Request Body");
+        if (value != null) {
+            parent.addView(ViewUtils.newJsonBody(mActivity, StringUtils.formatJson(value)));
         }
 
         scrollView.addView(parent);

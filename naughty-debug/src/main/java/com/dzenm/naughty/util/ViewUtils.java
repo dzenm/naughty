@@ -1,5 +1,8 @@
 package com.dzenm.naughty.util;
 
+import android.content.ClipData;
+import android.content.ClipDescription;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.ColorStateList;
@@ -22,7 +25,6 @@ import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -32,11 +34,13 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.AttrRes;
+import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -44,6 +48,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.appcompat.widget.ListPopupWindow;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.widget.NestedScrollView;
@@ -62,8 +67,7 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.dzenm.log.LogHelper;
 import com.dzenm.naughty.R;
-import com.dzenm.naughty.ui.MainModelActivity;
-import com.dzenm.naughty.ui.log.WhiteDivideItemDecoration;
+import com.dzenm.naughty.view.JSONViewAdapter;
 
 public class ViewUtils {
 
@@ -78,9 +82,11 @@ public class ViewUtils {
     public static TextView createFloatingView(Context context) {
         TextView textView = new TextView(context);
         textView.setLayoutParams(new FrameLayout.LayoutParams(dp2px(64), dp2px(64)));
-        textView.setText("网络调试");
+        textView.setText(context.getText(R.string.floating_debug_mode_title));
         textView.setGravity(Gravity.CENTER);
-        textView.setTextColor(context.getColor(android.R.color.white));
+        textView.setEllipsize(TextUtils.TruncateAt.END);
+        textView.setMaxLines(1);
+        textView.setTextColor(context.getResources().getColor(android.R.color.white));
         textView.setBackgroundResource(R.drawable.ic_floating);
         return textView;
     }
@@ -94,9 +100,8 @@ public class ViewUtils {
      * @param height  高度
      * @return Floating View
      */
-    public static LinearLayout createFloatingLogModel(
-            Context context, RecyclerView.Adapter<?> adapter, int width, int height
-    ) {
+    public static LinearLayout createFloatingLogModel(Context context, RecyclerView.Adapter<?> adapter,
+                                                      int width, int height) {
         LinearLayout parent = new LinearLayout(context);
         parent.setLayoutParams(new FrameLayout.LayoutParams(width, height));
         parent.setOrientation(LinearLayout.VERTICAL);
@@ -130,9 +135,7 @@ public class ViewUtils {
         RecyclerView recyclerView = createRecyclerView(context, adapter);
         titleLayout.setBackgroundColor(getColor(context, R.color.primary_transparent_color));
         recyclerView.setBackgroundColor(getColor(context, R.color.secondary_transparent_color));
-        recyclerView.addItemDecoration(new WhiteDivideItemDecoration(
-                getColor(context, R.color.secondary_text_color)
-        ));
+        recyclerView.addItemDecoration(new WhiteDivideItemDecoration(Colors.COLOR_SECONDARY_TEXT));
         parent.addView(titleLayout);
         parent.addView(recyclerView);
         return parent;
@@ -276,9 +279,8 @@ public class ViewUtils {
      * @param items      列表内容
      * @param anchorView dialog显示在锚点View的下方
      */
-    public static void createListDialog(
-            final Context context, final String[] items, final TextView anchorView
-    ) {
+    public static void createListDialog(final Context context, final String[] items,
+                                        final TextView anchorView) {
         final ListPopupWindow popupWindow = new ListPopupWindow(context);
         popupWindow.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, items));
         popupWindow.setAnchorView(anchorView);
@@ -305,26 +307,41 @@ public class ViewUtils {
     //************************************** Parent Layout ***************************************//
 
     /**
-     * 创建root view(包含一个Toolbar, 和一个RecyclerView, 如果 inflater 为null, Toolbar也为空,
+     * 创建Decor View(仅仅是一个FrameLayout)
+     *
+     * @param activity      上下文
+     * @param frameLayoutId frameLayout Id
+     * @return FrameLayout
+     */
+    public static View createDecorView(AppCompatActivity activity, int frameLayoutId) {
+        FrameLayout parent = new FrameLayout(activity);
+        parent.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+        parent.setId(frameLayoutId);
+        return parent;
+    }
+
+    /**
+     * 创建root view(包含一个Toolbar, 和一个RecyclerView, 如果isShowToolbar为false, Toolbar为空,
      * 如果adapter为null, RecyclerView也为空)
      *
-     * @param activity 上下文
-     * @param inflater 加载一个xml的layout
-     * @param adapter  RecyclerView adapter
-     * @param title    Toolbar标题
+     * @param activity      上下文
+     * @param isShowToolbar 是否设置Toolbar
+     * @param adapter       RecyclerView adapter
+     * @param title         Toolbar标题
      * @return LinearLayout
      */
-    public static LinearLayout createDecorView(
-            MainModelActivity activity, LayoutInflater inflater, RecyclerView.Adapter<?> adapter, CharSequence title
-    ) {
+    public static LinearLayout createDecorView(AppCompatActivity activity, boolean isShowToolbar,
+                                               RecyclerView.Adapter<?> adapter, CharSequence title) {
         LinearLayout parent = new LinearLayout(activity);
         parent.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT
         ));
         parent.setOrientation(LinearLayout.VERTICAL);
 
-        if (inflater != null) {
-            parent.addView(createToolbar(activity, inflater, parent, title));
+        if (isShowToolbar) {
+            parent.addView(createToolbar(activity, title));
         }
         if (adapter != null) {
             parent.addView(createRecyclerView(activity, adapter));
@@ -333,18 +350,30 @@ public class ViewUtils {
     }
 
     /**
-     * 创建一个Toolbar
+     * 创建一个Toolbar, Toolbar根据主题色colorPrimary设置, 默认显示前置的返回按钮并设置点击事件
      *
      * @param activity 上下文
-     * @param inflater 布局加载器
-     * @param parent   父布局
+     * @param title    Toolbar的标题
      * @return 创建的Toolbar
      */
-    public static Toolbar createToolbar(
-            final MainModelActivity activity, LayoutInflater inflater, ViewGroup parent, CharSequence title
-    ) {
-        // 添加并设置Toolbar
-        Toolbar toolbar = (Toolbar) inflater.inflate(R.layout.toolbar, parent, false);
+    public static Toolbar createToolbar(final AppCompatActivity activity, CharSequence title) {
+        // 获取ActionBar高度
+        TypedArray a = activity.getTheme().obtainStyledAttributes(
+                new int[]{android.R.attr.actionBarSize});
+        int actionBarSize = a.getDimensionPixelOffset(0, 0);
+        a.recycle();
+
+        Context context = new ContextThemeWrapper(activity, R.style.ThemeOverlay_AppCompat_Dark_ActionBar);
+        Toolbar toolbar = new Toolbar(context);
+        toolbar.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, actionBarSize));
+        // 获取colorPrimary颜色
+        TypedValue color = new TypedValue();
+        context.getTheme().resolveAttribute(android.R.attr.colorPrimary, color, true);
+        toolbar.setBackgroundColor(color.data);
+        toolbar.setPopupTheme(R.style.Theme_AppCompat_Light);
+
+        // 设置Toolbar
         activity.setSupportActionBar(toolbar);
         ActionBar actionBar = activity.getSupportActionBar();
         if (actionBar != null) {
@@ -367,13 +396,11 @@ public class ViewUtils {
      * @param adapter 适配器
      * @return 创建RecyclerView
      */
-    public static RecyclerView createRecyclerView(
-            final Context context, RecyclerView.Adapter<?> adapter
-    ) {
+    public static RecyclerView createRecyclerView(Context context, RecyclerView.Adapter<?> adapter) {
         // 添加并设置RecyclerView
         RecyclerView recyclerView = new RecyclerView(context);
         recyclerView.setLayoutParams(new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
         ));
         recyclerView.setLayoutManager(new LinearLayoutManager(
                 context, LinearLayoutManager.VERTICAL, false
@@ -382,9 +409,237 @@ public class ViewUtils {
         return recyclerView;
     }
 
+    //************************************** List Item View **************************************//
+
+    /**
+     * 创建Http列表的ItemView
+     *
+     * @param context 上下文
+     * @return ItemView
+     */
+    public static RelativeLayout createHttpItemView(Context context) {
+        RelativeLayout parent = new RelativeLayout(context);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.leftMargin = params.topMargin =
+                params.rightMargin = params.bottomMargin = dp2px(8);
+        parent.setLayoutParams(params);
+        parent.setElevation(Dimens.ELEVATION_4F);
+
+        // 状态标识
+        TextView result = new TextView(context);
+        RelativeLayout.LayoutParams resultParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT, dp2px(16));
+        resultParams.addRule(RelativeLayout.ALIGN_PARENT_END);
+        result.setLayoutParams(resultParams);
+        result.setGravity(Gravity.CENTER);
+        result.setPadding(dp2px(4), 0, dp2px(4), 0);
+        result.setTextColor(getColor(context, android.R.color.white));
+        result.setTextSize(10f);
+
+        // 进度显示
+        ProgressBar progressBar = new ProgressBar(context);
+        progressBar.setId(View.generateViewId());
+        RelativeLayout.LayoutParams progressParams = new RelativeLayout.LayoutParams(
+                dp2px(24), dp2px(24));
+        progressParams.addRule(RelativeLayout.ALIGN_PARENT_END);
+        progressParams.leftMargin = progressParams.rightMargin = dp2px(8);
+        progressParams.topMargin = dp2px(16);
+        progressBar.setLayoutParams(progressParams);
+
+        // 请求状态
+        TextView state = new TextView(context);
+        state.setId(View.generateViewId());
+        RelativeLayout.LayoutParams stateParams = new RelativeLayout.LayoutParams(dp2px(40),
+                RelativeLayout.LayoutParams.WRAP_CONTENT);
+        stateParams.leftMargin = stateParams.topMargin = stateParams.rightMargin = dp2px(16);
+        state.setLayoutParams(stateParams);
+        state.setGravity(Gravity.CENTER_VERTICAL);
+        state.setTextSize(16f);
+        state.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
+
+        // URL
+        TextView url = new TextView(context);
+        url.setId(View.generateViewId());
+        RelativeLayout.LayoutParams urlParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        urlParams.topMargin = dp2px(16);
+        urlParams.addRule(RelativeLayout.ALIGN_PARENT_END);
+        urlParams.addRule(RelativeLayout.START_OF, progressBar.getId());
+        urlParams.addRule(RelativeLayout.END_OF, state.getId());
+        url.setLayoutParams(urlParams);
+        url.setTextSize(16f);
+        url.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
+        url.setTextColor(Colors.COLOR_PRIMARY_TEXT);
+
+        // baseUrl
+        TextView baseUrl = new TextView(context);
+        baseUrl.setId(View.generateViewId());
+        RelativeLayout.LayoutParams baseUrlParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        baseUrlParams.addRule(RelativeLayout.BELOW, url.getId());
+        baseUrlParams.addRule(RelativeLayout.START_OF, progressBar.getId());
+        baseUrlParams.addRule(RelativeLayout.END_OF, state.getId());
+        baseUrlParams.topMargin = baseUrlParams.bottomMargin = dp2px(8);
+        baseUrl.setLayoutParams(baseUrlParams);
+        baseUrl.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+
+        // 请求所用耗时
+        TextView usageTime = new TextView(context);
+        RelativeLayout.LayoutParams usageTimeParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        usageTimeParams.addRule(RelativeLayout.BELOW, baseUrl.getId());
+        usageTimeParams.addRule(RelativeLayout.END_OF, state.getId());
+        usageTimeParams.bottomMargin = dp2px(16);
+        usageTime.setLayoutParams(usageTimeParams);
+        usageTime.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+
+        // 发出请求时的具体时间
+        TextView currentTime = new TextView(context);
+        RelativeLayout.LayoutParams currentTimeParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        currentTimeParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        currentTimeParams.addRule(RelativeLayout.BELOW, baseUrl.getId());
+        currentTimeParams.bottomMargin = dp2px(16);
+        currentTime.setLayoutParams(currentTimeParams);
+        currentTime.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+
+        // 请求返回内容的大小
+        TextView size = new TextView(context);
+        RelativeLayout.LayoutParams sizeParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        sizeParams.addRule(RelativeLayout.ALIGN_PARENT_END);
+        sizeParams.addRule(RelativeLayout.BELOW, baseUrl.getId());
+        sizeParams.rightMargin = sizeParams.bottomMargin = dp2px(16);
+        size.setLayoutParams(sizeParams);
+        size.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+
+        parent.addView(result);
+        parent.addView(progressBar);
+        parent.addView(state);
+        parent.addView(url);
+        parent.addView(baseUrl);
+        parent.addView(usageTime);
+        parent.addView(currentTime);
+        parent.addView(size);
+        return parent;
+    }
+
+    /**
+     * 创建文件列表的ItemView
+     *
+     * @param context 上下文
+     * @return ItemView
+     */
+    public static LinearLayout createFileItemView(Context context) {
+        LinearLayout parent = new LinearLayout(context);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        int margin = dp2px(Dimens.MARGIN_8);
+        int padding = dp2px(Dimens.MARGIN_16);
+        params.bottomMargin = params.topMargin = params.leftMargin = params.rightMargin = margin;
+        parent.setOrientation(LinearLayout.VERTICAL);
+        parent.setLayoutParams(params);
+        parent.setPadding(padding, padding, padding, padding);
+        parent.setElevation(Dimens.ELEVATION_4F);
+
+        // 文件名
+        TextView fileName = new TextView(context);
+        fileName.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        fileName.setTextSize(20f);
+        fileName.setEllipsize(TextUtils.TruncateAt.END);
+        fileName.setMaxLines(1);
+        fileName.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
+        fileName.setTextColor(Colors.COLOR_PRIMARY_TEXT);
+
+        // 文件路径
+        TextView filePath = new TextView(context);
+        LinearLayout.LayoutParams fileParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        fileParams.topMargin = fileParams.bottomMargin = margin;
+        filePath.setLayoutParams(fileParams);
+        filePath.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+
+        FrameLayout paramLayout = new FrameLayout(context);
+        paramLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        // 文件大小
+        TextView size = new TextView(context);
+        size.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT
+        ));
+        size.setGravity(Gravity.CENTER_VERTICAL);
+        size.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+
+        // 文件最后修改时间
+        TextView time = new TextView(context);
+        time.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT
+        );
+        layoutParams.gravity = Gravity.END;
+        time.setLayoutParams(layoutParams);
+        time.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+
+        paramLayout.addView(size);
+        paramLayout.addView(time);
+
+        parent.addView(fileName);
+        parent.addView(filePath);
+        parent.addView(paramLayout);
+        return parent;
+    }
+
+    /**
+     * 创建数据库表的ItemView
+     *
+     * @param context 上下文
+     * @return ItemView
+     */
+    public static LinearLayout createTableItemView(Context context) {
+        LinearLayout parent = new LinearLayout(context);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        int margin = dp2px(Dimens.MARGIN_8);
+        int padding = dp2px(Dimens.MARGIN_16);
+        params.bottomMargin = params.topMargin = params.leftMargin = params.rightMargin = margin;
+        parent.setOrientation(LinearLayout.VERTICAL);
+        parent.setLayoutParams(params);
+        parent.setPadding(padding, padding, padding, padding);
+        parent.setElevation(Dimens.ELEVATION_4F);
+
+        // 文件名
+        TextView fileName = new TextView(context);
+        fileName.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        fileName.setTextSize(16f);
+        fileName.setEllipsize(TextUtils.TruncateAt.END);
+        fileName.setMaxLines(1);
+        fileName.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
+        fileName.setTextColor(Colors.COLOR_PRIMARY_TEXT);
+
+        parent.addView(fileName);
+        return parent;
+    }
+
     //************************************** Parent Layout ***************************************//
 
-    public static NestedScrollView newScrollView(Context context) {
+    /**
+     * 创建一个可以滚动的Layout
+     *
+     * @param context 上下文
+     * @return NestedScrollView
+     */
+    public static NestedScrollView createScrollView(Context context) {
         NestedScrollView scrollView = new NestedScrollView(context);
         scrollView.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
@@ -392,20 +647,32 @@ public class ViewUtils {
         return scrollView;
     }
 
-    public static LinearLayout newDecorView(Context context) {
+    /**
+     * 创建一个线性布局的根View
+     *
+     * @param context 上下文
+     * @return root view
+     */
+    public static LinearLayout createRootView(Context context) {
         LinearLayout parent = new LinearLayout(context);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT
-        );
+        parent.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
         int padding = dp2px(Dimens.PADDING_16);
         parent.setPadding(padding, padding, padding, padding);
         parent.setOrientation(LinearLayout.VERTICAL);
-        parent.setLayoutParams(params);
         return parent;
     }
 
     //************************************** Content View ****************************************//
 
+    /**
+     * 创建小标题
+     *
+     * @param context  上下文
+     * @param padding  内边距
+     * @param subtitle 标题文字
+     * @return TextView
+     */
     public static TextView newSubtitle(Context context, int padding, String subtitle) {
         TextView tvSubtitle = new TextView(context);
         tvSubtitle.setPadding(dp2px(padding), dp2px(padding), dp2px(padding), dp2px(padding));
@@ -413,20 +680,27 @@ public class ViewUtils {
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT
         ));
         tvSubtitle.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-        tvSubtitle.setTextColor(getColor(context, R.color.subtitle_text_color));
+        tvSubtitle.setTextColor(Colors.COLOR_PRIMARY_TEXT);
         tvSubtitle.setTextSize(18f);
         tvSubtitle.setText(subtitle);
         return tvSubtitle;
     }
 
-    public static View newDivide(Context context, @ColorRes int color) {
+    /**
+     * 创建分割线
+     *
+     * @param context 上下文
+     * @param color   分割线颜色值
+     * @return 分割线
+     */
+    public static View newDivide(Context context, @ColorInt int color) {
         View divide = new View(context);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp2px(1)
         );
         params.bottomMargin = dp2px(Dimens.MARGIN_8);
         divide.setLayoutParams(params);
-        divide.setBackgroundColor(getColor(context, color));
+        divide.setBackgroundColor(color);
         return divide;
     }
 
@@ -448,7 +722,7 @@ public class ViewUtils {
         );
         child.setLayoutParams(params);
         child.setText(text);
-        child.setTextColor(getColor(context, R.color.primary_text_color));
+        child.setTextColor(Colors.COLOR_PRIMARY_TEXT);
         child.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
         return child;
     }
@@ -461,7 +735,7 @@ public class ViewUtils {
         child.setLayoutParams(params);
         child.setLineSpacing(0f, 1.2f);
         if ((text.startsWith("{") || text.startsWith("[")) && (text.endsWith("}") || text.endsWith("]"))) {
-            text = Utils.formatJson(text);
+            text = StringUtils.formatJson(text);
         }
         child.setText(getContentViewStyle(context, text));
         // 为TextView设置完Span后，别忘了setMovementMethod
@@ -471,13 +745,11 @@ public class ViewUtils {
 
     public static SpannableString getContentViewStyle(final Context context, final String text) {
         SpannableString string = new SpannableString(text);
-        ForegroundColorSpan contentColor = new ForegroundColorSpan(
-                getColor(context, R.color.secondary_text_color)
-        );
+        ForegroundColorSpan contentColor = new ForegroundColorSpan(Colors.COLOR_SECONDARY_TEXT);
         ClickableSpan clickableSpan = new ClickableSpan() {
             @Override
             public void onClick(@NonNull View widget) {
-                Utils.copy(context, text);
+                copy(context, text);
                 Toast.makeText(context, context.getString(R.string.toast_copy_text) + text,
                         Toast.LENGTH_SHORT).show();
             }
@@ -485,7 +757,7 @@ public class ViewUtils {
             @Override
             public void updateDrawState(@NonNull TextPaint ds) {
                 // 设置颜色
-                ds.setColor(getColor(context, R.color.secondary_text_color));
+                ds.setColor(Colors.COLOR_SECONDARY_TEXT);
                 // 去掉下划线
                 ds.setUnderlineText(false);
             }
@@ -497,30 +769,77 @@ public class ViewUtils {
 
     //************************************** Body ************************************************//
 
-    public static TextView newBodyView(Context context, String text) {
+    public static TextView newBodyView(Context context, String json) {
         TextView child = new TextView(context);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         );
         child.setLayoutParams(params);
         child.setLineSpacing(0f, 1.2f);
-        child.setText(getContentViewStyle(context, text));
+        child.setText(getContentViewStyle(context, json));
         // 为TextView设置完Span后，别忘了setMovementMethod
         child.setMovementMethod(LinkMovementMethod.getInstance());
         return child;
     }
 
+    public static View newJsonBody(Context context, String json) {
+        RecyclerView recyclerView = new RecyclerView(context);
+        recyclerView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+        recyclerView.setLayoutManager(new LinearLayoutManager(context));
+        JSONViewAdapter adapter = new JSONViewAdapter(context);
+        recyclerView.setAdapter(adapter);
+        adapter.bindData(json);
+        return recyclerView;
+    }
+
     //************************************** Tab ************************************************//
 
-    public static void initTab(
-            final AppCompatActivity activity, FragmentManager fragmentManager,
-            final ViewPager viewPager, final LinearLayout tabLayout,
-            final String[] titles, Fragment[] fragments
-    ) {
+    /**
+     * 创建一个内容跟随Tab可以左右滑动的TabLayout
+     *
+     * @param activity 上下文
+     * @param title    Tab标题
+     * @return TabLayout
+     */
+    public static LinearLayout createTabLayout(AppCompatActivity activity, String title) {
+        // 创建根布局
+        LinearLayout parent = new LinearLayout(activity);
+        parent.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+        parent.setOrientation(LinearLayout.VERTICAL);
+
+        // 添加并设置TabLayout
+        LinearLayout tabLayout = new LinearLayout(activity);
+        tabLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        tabLayout.setGravity(Gravity.CENTER);
+        tabLayout.setBackgroundColor(resolveColor(activity, R.attr.colorPrimary));
+
+        // 添加并设置ViewPager
+        ViewPager viewPager = new ViewPager(activity);
+        viewPager.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1
+        ));
+        viewPager.setId(View.generateViewId());
+
+        // 添加所有View到根布局
+        parent.addView(createToolbar(activity, title));
+        parent.addView(tabLayout);
+        parent.addView(viewPager);
+        return parent;
+    }
+
+    public static void initTab(final AppCompatActivity activity, FragmentManager fragmentManager,
+                               final ViewPager viewPager, final LinearLayout tabLayout,
+                               final String[] titles, Fragment[] fragments) {
         // 初始化Tab显示内容
         for (int i = 0; i < titles.length; i++) {
             final int position = i;
-            TextView tab = ViewUtils.createTab(activity);
+            TextView tab = createTab(activity);
             tab.setText(titles[i]);
             boolean isSelected = i == 0;
             tab.setTextSize(isSelected ? 18 : 14);
@@ -565,17 +884,22 @@ public class ViewUtils {
         });
     }
 
+    /**
+     * 创建一个Tab
+     *
+     * @param context 上下文
+     * @return Tab
+     */
     public static TextView createTab(Context context) {
         TextView tab = new TextView(context);
         tab.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, dp2px(50))
-        );
+                LinearLayout.LayoutParams.WRAP_CONTENT, dp2px(50)));
         tab.setPadding(dp2px(Dimens.PADDING_24), 0, dp2px(Dimens.PADDING_24), 0);
         tab.setGravity(Gravity.CENTER);
         tab.setTextSize(18);
         tab.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            tab.setForeground(ViewUtils.resolveDrawable(context, android.R.attr.selectableItemBackground));
+            tab.setForeground(resolveDrawable(context, android.R.attr.selectableItemBackground));
         }
         return tab;
     }
@@ -672,7 +996,7 @@ public class ViewUtils {
                 dp2px(radius), dp2px(radius), dp2px(radius), dp2px(radius)};
         normalDrawable.setCornerRadii(radiusIIII);
 
-        normalDrawable.setStroke(dp2px(Dimens.STROKE_1), resolveColor(context, R.attr.colorButtonNormal));
+//        normalDrawable.setStroke(dp2px(Dimens.STROKE_1), resolveColor(context, R.attr.colorButtonNormal));
 
         return new RippleDrawable(
                 ColorStateList.valueOf(resolveColor(context, R.attr.colorButtonNormal)),
@@ -730,6 +1054,22 @@ public class ViewUtils {
         return (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, value, Resources.getSystem().getDisplayMetrics()
         );
+    }
+
+    /**
+     * 复制纯文本
+     *
+     * @param context 获取系统服务的上下文
+     * @param text    复制的文本
+     */
+    public static void copy(Context context, CharSequence text) {
+        // 获取剪切板管理器
+        ClipboardManager clipboardManager = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        // 创建普通字符clipData
+        ClipData clipData = ClipData.newPlainText(ClipDescription.MIMETYPE_TEXT_PLAIN, text);
+        if (clipboardManager != null) {
+            clipboardManager.setPrimaryClip(clipData);
+        }
     }
 
     /**

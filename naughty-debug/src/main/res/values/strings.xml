@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- color -->
-    <color name="subtitle_text_color">#212121</color>
-    <color name="primary_text_color">#616161</color>
-    <color name="secondary_text_color">#757575</color>
-    <color name="divide_color">#E0E0E0</color>
 
     <color name="primary_transparent_color">#DD212121</color>
     <color name="secondary_transparent_color">#CC212121</color>
 
+    <!-- array -->
     <string-array name="theme_mode">
         <item>白天模式</item>
         <item>夜间模式</item>
@@ -26,10 +23,15 @@
     </string-array>
 
     <!-- string -->
-    <string name="item_close">关闭</string>
+    <!-- 菜单文本 -->
+    <string name="item_db">数据库</string>
+    <string name="item_sp">SharedPreference</string>
     <string name="item_clear">清除所有</string>
-    <string name="item_cache">数据库查看</string>
     <string name="item_setting">设置</string>
+    <string name="item_close">关闭</string>
+
+    <!-- 悬浮窗文本 -->
+    <string name="floating_debug_mode_title">调试</string>
 
     <string name="floating_log_title">Log(可拖动)</string>
     <string name="log_level_title">Level: </string>
@@ -42,19 +44,29 @@
     <string name="dialog_button_confirm">确定</string>
     <string name="dialog_button_cancel">取消</string>
 
+    <!-- 数据库和SharedPreferences文本 -->
     <string name="shared_preferences_title">SharedPreferences File</string>
+    <string name="dp_title">数据库</string>
+    <string name="file_size">文件大小: </string>
+    <string name="file_last_modifier_time">最后修改: </string>
 
+    <!-- HTTP数据请求文本 -->
     <string name="tab_response_title">RESPONSE</string>
     <string name="tab_request_title">REQUEST</string>
+    <string name="json_expand">expand</string>
+    <string name="json_shrink">shrink</string>
 
+    <!-- Toast提示文本 -->
     <string name="toast_copy_text">复制成功: </string>
     <string name="toast_delete_text">删除成功</string>
     <string name="toast_internet_loading_failed">网络请求正在加载中…请加载结束后再试</string>
 
+    <!-- dialog请求权限 -->
     <string name="dialog_request_permission_failed_title">授权失败</string>
     <string name="dialog_request_permission_failed_message">未授予悬浮窗权限, 如需继续使用悬浮窗功能, 请前往授权</string>
     <string name="dialog_request_permission_button_confirm">前往授权</string>
 
+    <!-- 设置文本 -->
     <string name="setting_title">设置</string>
 
     <string name="setting_basic_preferences">基本设置</string>

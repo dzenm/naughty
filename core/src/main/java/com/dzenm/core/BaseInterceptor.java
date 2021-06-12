@@ -13,7 +13,6 @@ public class BaseInterceptor implements Interceptor {
 
     @Override
     public Response intercept(Chain chain) throws IOException {
-        Request request = chain.request();
-        return chain.proceed(request);
+        return chain.proceed(chain.request());
     }
 }

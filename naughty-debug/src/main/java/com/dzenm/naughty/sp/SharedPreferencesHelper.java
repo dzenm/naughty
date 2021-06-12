@@ -1,10 +1,10 @@
-package com.dzenm.naughty.shared_preferences;
+package com.dzenm.naughty.sp;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-import com.dzenm.naughty.util.Utils;
+import com.dzenm.naughty.util.FileUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ public class SharedPreferencesHelper {
      * @return SharedPreferences所有文件
      */
     public static List<File> getSharedPreferenceFiles(Context context) {
-        List<File> files = Utils.getFiles(getSharedPreferencesDir(context), null);
+        List<File> files = FileUtils.getFiles(getSharedPreferencesDir(context), null);
         return files == null ? new ArrayList<File>() : files;
     }
 

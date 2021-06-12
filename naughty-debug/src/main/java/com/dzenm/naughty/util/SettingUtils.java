@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.dzenm.naughty.R;
-import com.dzenm.naughty.shared_preferences.SharedPreferencesHelper;
+import com.dzenm.naughty.sp.SharedPreferencesHelper;
 import com.dzenm.naughty.ui.setting.SettingFragment;
 
 public class SettingUtils {
@@ -44,19 +44,45 @@ public class SettingUtils {
         return (boolean) getValue(context, key, defValue);
     }
 
+    /**
+     * 获取设置中的String值
+     *
+     * @param context  上下文
+     * @param key      值对应的键
+     * @param defValue 默认值
+     * @return String
+     */
     public static String getStringValue(Context context, String key, String defValue) {
         return (String) getValue(context, key, defValue);
     }
 
+    /**
+     * 获取设置中的主题模式
+     *
+     * @param context 上下文
+     * @return 主题模式
+     */
     public static String getThemeMode(Context context) {
         String[] values = context.getResources().getStringArray(R.array.theme_mode);
         return (String) getValue(context, SettingFragment.KEY_THEME_MODE, values[0]);
     }
 
+    /**
+     * 获取设置中的是否开启悬浮窗保存的值
+     *
+     * @param context 上下文
+     * @return 是否开启悬浮窗
+     */
     public static boolean isEnabledFloating(Context context) {
         return getBooleanValue(context, SettingFragment.KEY_ENABLED_FLOATING, true);
     }
 
+    /**
+     * 获取设置中的悬浮窗的样式保存的值
+     *
+     * @param context 上下文
+     * @return 悬浮窗样式
+     */
     public static int getFloatingStyle(Context context) {
         String[] values = context.getResources().getStringArray(R.array.floating_value);
         String defValue = (String) getValue(context, SettingFragment.KEY_FLOATING_STYLE, values[0]);

@@ -2,6 +2,8 @@ package com.dzenm.naughty.util;
 
 public class Dimens {
 
+    public static final float ELEVATION_4F = 4f;
+
     public static final float RADIUS_4F = 4f;
     public static final float RADIUS_8F = 8f;
     public static final float RADIUS_12F = 12f;

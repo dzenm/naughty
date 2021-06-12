@@ -26,12 +26,22 @@ import java.util.List;
 
 /**
  * @author dzenm
+ * 2020/8/4
  */
 public abstract class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder> {
 
+    private static final int NO_LAYOUT_ID = -1;
+
     protected Context context;
     protected List<T> data = new ArrayList<>();
+
+    /**
+     * 单击事件
+     */
     protected OnItemClickListener<T> mOnItemClickListener;
+    /**
+     * 长按事件
+     */
     protected OnItemLongClickListener<T> mOnItemLongClickListener;
 
     public void setData(List<T> data) {
@@ -53,18 +63,22 @@ public abstract class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.Vi
     }
 
     protected int layoutId() {
-        return 0;
+        return NO_LAYOUT_ID;
     }
 
     protected View getView() {
         return null;
     }
 
+    protected boolean isDeleteClickable() {
+        return true;
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         return new ViewHolder(
-                layoutId() == 0
+                layoutId() == NO_LAYOUT_ID
                         ? getView()
                         : LayoutInflater.from(context).inflate(layoutId(), parent, false)
         );
@@ -72,11 +86,12 @@ public abstract class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.Vi
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, final int position) {
+        final int i = holder.getAdapterPosition();
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mOnItemClickListener != null) {
-                    mOnItemClickListener.onItemClick(data.get(position), position);
+                    mOnItemClickListener.onItemClick(data.get(i), i);
                 }
             }
         });
@@ -84,9 +99,9 @@ public abstract class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.Vi
             @Override
             public boolean onLongClick(View v) {
                 if (mOnItemLongClickListener != null) {
-                    mOnItemLongClickListener.onItemLongClick(data.get(position), position);
-                } else {
-                    deleteItemAlert(data.get(position), position);
+                    mOnItemLongClickListener.onItemLongClick(data.get(i), i);
+                } else if (isDeleteClickable()) {
+                    deleteItemAlert(data.get(i), i);
                 }
                 return false;
             }
@@ -140,48 +155,48 @@ public abstract class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.Vi
             return (TextView) getView(id);
         }
 
-        public TextView getTextView(int position) {
-            return (TextView) getViewId(position);
+        public TextView getTextView(int i) {
+            return (TextView) getViewAt(i);
         }
 
         public ImageView getImageViewId(@IdRes int id) {
             return (ImageView) getView(id);
         }
 
-        public ImageView getImageView(int position) {
-            return (ImageView) getViewId(position);
+        public ImageView getImageView(int i) {
+            return (ImageView) getViewAt(i);
         }
 
         public ProgressBar getProgressBarId(@IdRes int id) {
             return (ProgressBar) getView(id);
         }
 
-        public ProgressBar getProgressBar(int position) {
-            return (ProgressBar) getViewId(position);
+        public ProgressBar getProgressBar(int i) {
+            return (ProgressBar) getViewAt(i);
         }
 
         public LinearLayout getLinearLayoutId(@IdRes int id) {
             return (LinearLayout) getView(id);
         }
 
-        public LinearLayout getLinearLayout(int position) {
-            return (LinearLayout) getViewId(position);
+        public LinearLayout getLinearLayout(int i) {
+            return (LinearLayout) getViewAt(i);
         }
 
         public RelativeLayout getRelativeLayoutId(@IdRes int id) {
             return (RelativeLayout) getView(id);
         }
 
-        public RelativeLayout getRelativeLayout(int position) {
-            return (RelativeLayout) getViewId(position);
+        public RelativeLayout getRelativeLayout(int i) {
+            return (RelativeLayout) getViewAt(i);
         }
 
         public FrameLayout getFrameLayoutId(@IdRes int id) {
             return (FrameLayout) getView(id);
         }
 
-        public FrameLayout getFrameLayout(int position) {
-            return (FrameLayout) getViewId(position);
+        public FrameLayout getFrameLayout(int i) {
+            return (FrameLayout) getViewAt(i);
         }
 
         public View getView(@IdRes int id) {
@@ -193,11 +208,10 @@ public abstract class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.Vi
             return view;
         }
 
-        public View getViewId(int position) {
-            return ((ViewGroup) itemView).getChildAt(position);
+        public View getViewAt(int i) {
+            return ((ViewGroup) itemView).getChildAt(i);
         }
     }
-
 
     public interface OnItemClickListener<T> {
         void onItemClick(T data, int position);

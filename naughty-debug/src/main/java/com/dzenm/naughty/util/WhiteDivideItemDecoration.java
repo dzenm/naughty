@@ -1,4 +1,4 @@
-package com.dzenm.naughty.ui.log;
+package com.dzenm.naughty.util;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class WhiteDivideItemDecoration extends RecyclerView.ItemDecoration {
 
-    private Paint mPaint;
+    private final Paint mPaint;
 
     public WhiteDivideItemDecoration(@ColorInt int color) {
         mPaint = new Paint();
