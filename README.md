@@ -8,11 +8,11 @@
 
 release版本使用
 ```groovy
-releaseImplementation 'com.github.dzenm.naughty:naughty-release:1.4.0'
+releaseImplementation 'com.github.dzenm.naughty:naughty-release:1.6.0'
 ```
 debug版本使用
 ```
-debugImplementation 'com.github.dzenm.naughty:naughty-debug:1.4.0'
+debugImplementation 'com.github.dzenm.naughty:naughty-debug:1.6.0'
 ```
 
 ## 使用
