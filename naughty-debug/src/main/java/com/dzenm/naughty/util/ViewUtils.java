@@ -32,6 +32,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -67,7 +68,13 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.dzenm.log.LogHelper;
 import com.dzenm.naughty.R;
+import com.dzenm.naughty.db.model.Column;
+import com.dzenm.naughty.ui.file.db.DataAdapter;
 import com.dzenm.naughty.view.JSONViewAdapter;
+import com.dzenm.naughty.view.TableCellView;
+import com.dzenm.naughty.view.TableRowLayout;
+
+import java.util.List;
 
 public class ViewUtils {
 
@@ -135,7 +142,7 @@ public class ViewUtils {
         RecyclerView recyclerView = createRecyclerView(context, adapter);
         titleLayout.setBackgroundColor(getColor(context, R.color.primary_transparent_color));
         recyclerView.setBackgroundColor(getColor(context, R.color.secondary_transparent_color));
-        recyclerView.addItemDecoration(new WhiteDivideItemDecoration(Colors.COLOR_SECONDARY_TEXT));
+        recyclerView.addItemDecoration(new WhiteDivideItemDecoration(Colors.SECONDARY_TEXT));
         parent.addView(titleLayout);
         parent.addView(recyclerView);
         return parent;
@@ -471,7 +478,7 @@ public class ViewUtils {
         url.setLayoutParams(urlParams);
         url.setTextSize(16f);
         url.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-        url.setTextColor(Colors.COLOR_PRIMARY_TEXT);
+        url.setTextColor(Colors.PRIMARY_TEXT);
 
         // baseUrl
         TextView baseUrl = new TextView(context);
@@ -483,7 +490,7 @@ public class ViewUtils {
         baseUrlParams.addRule(RelativeLayout.END_OF, state.getId());
         baseUrlParams.topMargin = baseUrlParams.bottomMargin = dp2px(8);
         baseUrl.setLayoutParams(baseUrlParams);
-        baseUrl.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+        baseUrl.setTextColor(Colors.SECONDARY_TEXT);
 
         // 请求所用耗时
         TextView usageTime = new TextView(context);
@@ -493,7 +500,7 @@ public class ViewUtils {
         usageTimeParams.addRule(RelativeLayout.END_OF, state.getId());
         usageTimeParams.bottomMargin = dp2px(16);
         usageTime.setLayoutParams(usageTimeParams);
-        usageTime.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+        usageTime.setTextColor(Colors.SECONDARY_TEXT);
 
         // 发出请求时的具体时间
         TextView currentTime = new TextView(context);
@@ -503,7 +510,7 @@ public class ViewUtils {
         currentTimeParams.addRule(RelativeLayout.BELOW, baseUrl.getId());
         currentTimeParams.bottomMargin = dp2px(16);
         currentTime.setLayoutParams(currentTimeParams);
-        currentTime.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+        currentTime.setTextColor(Colors.SECONDARY_TEXT);
 
         // 请求返回内容的大小
         TextView size = new TextView(context);
@@ -513,7 +520,7 @@ public class ViewUtils {
         sizeParams.addRule(RelativeLayout.BELOW, baseUrl.getId());
         sizeParams.rightMargin = sizeParams.bottomMargin = dp2px(16);
         size.setLayoutParams(sizeParams);
-        size.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+        size.setTextColor(Colors.SECONDARY_TEXT);
 
         parent.addView(result);
         parent.addView(progressBar);
@@ -554,7 +561,7 @@ public class ViewUtils {
         fileName.setEllipsize(TextUtils.TruncateAt.END);
         fileName.setMaxLines(1);
         fileName.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-        fileName.setTextColor(Colors.COLOR_PRIMARY_TEXT);
+        fileName.setTextColor(Colors.PRIMARY_TEXT);
 
         // 文件路径
         TextView filePath = new TextView(context);
@@ -563,7 +570,7 @@ public class ViewUtils {
         );
         fileParams.topMargin = fileParams.bottomMargin = margin;
         filePath.setLayoutParams(fileParams);
-        filePath.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+        filePath.setTextColor(Colors.SECONDARY_TEXT);
 
         FrameLayout paramLayout = new FrameLayout(context);
         paramLayout.setLayoutParams(new LinearLayout.LayoutParams(
@@ -576,7 +583,7 @@ public class ViewUtils {
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT
         ));
         size.setGravity(Gravity.CENTER_VERTICAL);
-        size.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+        size.setTextColor(Colors.SECONDARY_TEXT);
 
         // 文件最后修改时间
         TextView time = new TextView(context);
@@ -586,7 +593,7 @@ public class ViewUtils {
         );
         layoutParams.gravity = Gravity.END;
         time.setLayoutParams(layoutParams);
-        time.setTextColor(Colors.COLOR_SECONDARY_TEXT);
+        time.setTextColor(Colors.SECONDARY_TEXT);
 
         paramLayout.addView(size);
         paramLayout.addView(time);
@@ -625,10 +632,117 @@ public class ViewUtils {
         fileName.setEllipsize(TextUtils.TruncateAt.END);
         fileName.setMaxLines(1);
         fileName.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-        fileName.setTextColor(Colors.COLOR_PRIMARY_TEXT);
+        fileName.setTextColor(Colors.PRIMARY_TEXT);
 
         parent.addView(fileName);
         return parent;
+    }
+
+
+    /**
+     * 创建root view(包含一个Toolbar, 和一个RecyclerView,)
+     *
+     * @return LinearLayout
+     */
+    public static LinearLayout createDataView(AppCompatActivity activity,
+                                              HorizontalScrollView scrollView,
+                                              ProgressBar progressBar,
+                                              TableRowLayout tableRowLayout,
+                                              TextView totalCount,
+                                              DataAdapter adapter,
+                                              String tableName) {
+        LinearLayout parent = new LinearLayout(activity);
+        parent.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+        parent.setOrientation(LinearLayout.VERTICAL);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT
+        );
+        params.gravity = Gravity.CENTER;
+        progressBar.setLayoutParams(params);
+
+        scrollView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 1
+        ));
+        scrollView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        scrollView.setVerticalScrollBarEnabled(false);
+
+        totalCount.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        totalCount.setPadding(dp2px(12), dp2px(12), dp2px(12), dp2px(12));
+        totalCount.setGravity(Gravity.CENTER);
+
+        tableRowLayout.setBackgroundColor(Colors.GRAY_BACKGROUND);
+
+        LinearLayout dataParent = new LinearLayout(activity);
+        dataParent.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        dataParent.setOrientation(LinearLayout.VERTICAL);
+
+        dataParent.addView(tableRowLayout);
+        dataParent.addView(ViewUtils.createRecyclerView(activity, adapter));
+
+        scrollView.addView(dataParent);
+
+        parent.addView(ViewUtils.createToolbar(activity, tableName));
+        parent.addView(scrollView);
+        parent.addView(progressBar);
+        parent.addView(totalCount);
+        return parent;
+    }
+
+    /**
+     * 创建表格布局横行显示的ItemView
+     *
+     * @param context 上下文
+     * @return TableRowLayout
+     */
+    public static TableRowLayout createColumnItemView(Context context) {
+        TableRowLayout parent = new TableRowLayout(context);
+        parent.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, dp2px(30)
+        ));
+        return parent;
+    }
+
+    /**
+     * Build a TableRowLayout as a row to show the columns of a table as title.
+     */
+    public static void createColumnItemView(TableRowLayout tableRowLayout,
+                                            List<Column> columns, int rowWidth) {
+        ViewGroup.LayoutParams param = tableRowLayout.getLayoutParams();
+        param.width = rowWidth;
+        for (int i = 0; i < columns.size(); i++) {
+            Column column = columns.get(i);
+            TableCellView tableCellView = createRowItemView(tableRowLayout.getContext());
+            tableCellView.setFirstCell(i == 0);
+            tableCellView.setText(column.getName());
+            // We let each column has 20dp extra space, to make it look better.
+            LinearLayout.LayoutParams layoutParam = new LinearLayout.LayoutParams(
+                    column.getWidth() + dp2px(20),
+                    LinearLayout.LayoutParams.MATCH_PARENT
+            );
+            tableRowLayout.addView(tableCellView, layoutParam);
+        }
+        tableRowLayout.setBackgroundColor(Color.WHITE);
+    }
+
+    /**
+     * Build a TextView widget as a table cell to show data in a row.
+     */
+    public static TableCellView createRowItemView(Context context) {
+        TableCellView tableCellView = new TableCellView(context);
+        tableCellView.setGravity(Gravity.CENTER_VERTICAL);
+        // Actually each column has 20dp extra space, but we only use 10 in padding.
+        // This makes each column has more space to show their content before be ellipsized.
+        tableCellView.setPadding(ViewUtils.dp2px(5), 0, ViewUtils.dp2px(5), 0);
+        tableCellView.setSingleLine();
+        tableCellView.setEllipsize(TextUtils.TruncateAt.END);
+        return tableCellView;
     }
 
     //************************************** Parent Layout ***************************************//
@@ -680,7 +794,7 @@ public class ViewUtils {
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT
         ));
         tvSubtitle.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-        tvSubtitle.setTextColor(Colors.COLOR_PRIMARY_TEXT);
+        tvSubtitle.setTextColor(Colors.PRIMARY_TEXT);
         tvSubtitle.setTextSize(18f);
         tvSubtitle.setText(subtitle);
         return tvSubtitle;
@@ -722,7 +836,7 @@ public class ViewUtils {
         );
         child.setLayoutParams(params);
         child.setText(text);
-        child.setTextColor(Colors.COLOR_PRIMARY_TEXT);
+        child.setTextColor(Colors.PRIMARY_TEXT);
         child.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
         return child;
     }
@@ -745,7 +859,7 @@ public class ViewUtils {
 
     public static SpannableString getContentViewStyle(final Context context, final String text) {
         SpannableString string = new SpannableString(text);
-        ForegroundColorSpan contentColor = new ForegroundColorSpan(Colors.COLOR_SECONDARY_TEXT);
+        ForegroundColorSpan contentColor = new ForegroundColorSpan(Colors.SECONDARY_TEXT);
         ClickableSpan clickableSpan = new ClickableSpan() {
             @Override
             public void onClick(@NonNull View widget) {
@@ -757,7 +871,7 @@ public class ViewUtils {
             @Override
             public void updateDrawState(@NonNull TextPaint ds) {
                 // 设置颜色
-                ds.setColor(Colors.COLOR_SECONDARY_TEXT);
+                ds.setColor(Colors.SECONDARY_TEXT);
                 // 去掉下划线
                 ds.setUnderlineText(false);
             }

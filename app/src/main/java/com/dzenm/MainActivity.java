@@ -51,6 +51,9 @@ public class MainActivity extends AppCompatActivity {
         crash.setOnClickListener(v -> {
             startActivity(new Intent(this, PersonActivity.class));
         });
+
+        Username username = new Username(1, "dinzhenyan", "sex", 22, "江苏省", true, 21213, 129.87f, 1263.21781);
+        username.save();
     }
 
     /**

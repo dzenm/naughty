@@ -4,15 +4,18 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 import com.dzenm.naughty.base.BaseAdapter;
 import com.dzenm.naughty.base.BaseFragment;
 import com.dzenm.naughty.db.DBHelper;
 import com.dzenm.naughty.db.model.Table;
 import com.dzenm.naughty.ui.MainActivity;
+import com.dzenm.naughty.ui.file.sp.SPFragment;
 import com.dzenm.naughty.util.ViewUtils;
 
 import java.io.File;
@@ -53,7 +56,7 @@ public class TableFragment extends BaseFragment<MainActivity> implements
         }
         TableAdapter adapter = new TableAdapter();
         adapter.setOnItemClickListener(this);
-        List<Table> tables = DBHelper.getTableFromDB(DBHelper.openDatabase(data.getPath()));
+        List<Table> tables = DBHelper.getTableFromDB(data.getPath());
         adapter.setData(tables);
 
         return ViewUtils.createDecorView(
@@ -61,7 +64,9 @@ public class TableFragment extends BaseFragment<MainActivity> implements
     }
 
     @Override
-    public void onItemClick(Table data, int position) {
-
+    public void onItemClick(Table table, int position) {
+        String path = data.getPath();
+        DataFragment fragment = DataFragment.newInstance(path, table.getName());
+        mActivity.switchFragment(this, fragment);
     }
 }

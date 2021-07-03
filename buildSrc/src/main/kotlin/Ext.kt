@@ -4,7 +4,7 @@ object Ext {
     const val minSdkVersion = 21
     const val targetSdkVersion = 29
     const val versionCode = 18
-    const val versionName = "1.5.7"
+    const val versionName = "1.5.9"
     const val kotlinVersion = "1.4.10"
 
     const val ConstraintLayout = "androidx.constraintlayout:constraintlayout:2.0.4"

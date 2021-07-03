@@ -77,7 +77,7 @@ public class TabFragment extends BaseFragment<MainActivity> {
         LinearLayout parent = ViewUtils.createRootView(mActivity);
 
         parent.addView(ViewUtils.newSubtitle(mActivity, Dimens.PADDING_8, "Headers"));
-        parent.addView(ViewUtils.newDivide(mActivity, Colors.COLOR_DIVIDE));
+        parent.addView(ViewUtils.newDivide(mActivity, Colors.DIVIDE));
         for (Map.Entry<String, String> map : data.entrySet()) {
             String key = map.getKey();
             String value = map.getValue();
@@ -91,7 +91,7 @@ public class TabFragment extends BaseFragment<MainActivity> {
         }
 
         parent.addView(ViewUtils.newSubtitle(mActivity, Dimens.PADDING_8, "Body"));
-        parent.addView(ViewUtils.newDivide(mActivity, Colors.COLOR_DIVIDE));
+        parent.addView(ViewUtils.newDivide(mActivity, Colors.DIVIDE));
 
         String value = which != BUNDLE_REQUEST ? data.get("Response Body") : data.get("Request Body");
         if (value != null) {

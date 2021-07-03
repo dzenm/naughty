@@ -9,52 +9,20 @@ public class Username extends LitePalSupport {
     private String sex;
     private int age;
     private String address;
+    private boolean isRoot;
+    private long date;
+    private float amount;
+    private double sum;
 
-    public Username(long id, String username, String sex, int age, String address) {
+    public Username(long id, String username, String sex, int age, String address, boolean isRoot, long date, float amount, double sum) {
         this.id = id;
         this.username = username;
         this.sex = sex;
         this.age = age;
         this.address = address;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getSex() {
-        return sex;
-    }
-
-    public void setSex(String sex) {
-        this.sex = sex;
-    }
-
-    public int getAge() {
-        return age;
-    }
-
-    public void setAge(int age) {
-        this.age = age;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
+        this.isRoot = isRoot;
+        this.date = date;
+        this.amount = amount;
+        this.sum = sum;
     }
 }
