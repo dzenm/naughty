@@ -100,8 +100,8 @@ public class HttpInterceptor extends BaseInterceptor {
         Headers requestHeaders = request.headers();
         for (int i = 0, count = requestHeaders.size(); i < count; i++) {
             requestHeader.put(requestHeaders.name(i), requestHeaders.value(i));
+            bean.setRequestHeaders(requestHeader);
         }
-        bean.setRequestHeaders(requestHeader);
         // 请求体
         if (hasRequestBody && !bodyEncoded(request.headers())) {
             Buffer buffer = new Buffer();

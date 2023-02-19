@@ -45,10 +45,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements Prefere
 
     private MainActivity mActivity;
     private ListPreference mThemeMode;
-    private SwitchPreferenceCompat mFloatingState;
     private ListPreference mFloatingStyle;
-    private SwitchPreferenceCompat mLogDebugState;
-    private SwitchPreferenceCompat mHttpModelState;
     private SwitchPreferenceCompat mHttpNotificationState;
     private ListPreference mNotificationLevel;
     private SwitchPreferenceCompat mHttpNotificationSoundAndVibrationState;
@@ -71,6 +68,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements Prefere
         initData();
     }
 
+    @NonNull
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
@@ -89,20 +87,17 @@ public class SettingFragment extends PreferenceFragmentCompat implements Prefere
     private void initData() {
         final String githubUrl = "https://github.com/dzenm/naughty";
         mIssue.setSummary(githubUrl);
-        mIssue.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse(githubUrl));
-                startActivity(intent);
-                return false;
-            }
+        mIssue.setOnPreferenceClickListener(preference -> {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(githubUrl));
+            startActivity(intent);
+            return false;
         });
-        mVersion.setSummary(BuildConfig.VERSION_NAME);
+        mVersion.setSummary("");
     }
 
     @Override
-    public boolean onPreferenceChange(Preference preference, Object newValue) {
+    public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
         if (preference == mThemeMode) {
             mActivity.getDelegate().setLocalNightMode(mActivity.loadThemeMode((String) newValue));
             mActivity.recreate();
@@ -171,7 +166,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements Prefere
      */
     private void createFloatingPreference(PreferenceCategory floatingPreference) {
         // 悬浮窗开关
-        mFloatingState = ViewUtils.createSwitch(mActivity, true,
+        SwitchPreferenceCompat mFloatingState = ViewUtils.createSwitch(mActivity, true,
                 R.string.setting_floating_title_preferences,
                 R.string.setting_floating_summary_preferences
         );
@@ -197,7 +192,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements Prefere
      */
     private void createLogPreference(PreferenceCategory logPreference) {
         // 日志Debug开关
-        mLogDebugState = ViewUtils.createSwitch(mActivity, true,
+        SwitchPreferenceCompat mLogDebugState = ViewUtils.createSwitch(mActivity, true,
                 R.string.setting_log_debug_title_preferences,
                 R.string.setting_log_debug_summary_preferences
         );
@@ -213,7 +208,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements Prefere
      */
     private void createHttpPreference(PreferenceCategory httpPreference) {
         // HTTP面板开关
-        mHttpModelState = ViewUtils.createSwitch(mActivity, true,
+        SwitchPreferenceCompat mHttpModelState = ViewUtils.createSwitch(mActivity, true,
                 R.string.setting_http_interceptor_title_preferences,
                 R.string.setting_http_interceptor_summary_preferences
         );

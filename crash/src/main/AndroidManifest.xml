@@ -2,6 +2,8 @@
     package="com.dzenm.crash">
 
     <application>
-        <service android:name=".RestartService" />
+        <service
+            android:name=".RestartService"
+            android:exported="false" />
     </application>
 </manifest>

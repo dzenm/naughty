@@ -6,14 +6,19 @@
     <application>
         <activity
             android:name=".ui.MainActivity"
+            android:exported="true"
             android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".service.NaughtyService" />
-        <receiver android:name=".service.NaughtyBroadcast" />
+        <service
+            android:name=".service.NaughtyService"
+            android:exported="false" />
+        <receiver
+            android:name=".service.NaughtyBroadcast"
+            android:exported="false" />
     </application>
 
 </manifest>
